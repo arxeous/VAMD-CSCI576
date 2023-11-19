@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\dev\VS\VideoSearch\vendor\ffmpeg\include\libavutil\rational.h(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (932). Save the file in Unicode format to prevent data loss
+C:\dev\VS\VideoSearch\src\main.cpp(305,20): warning C4018: '<': signed/unsigned mismatch
+C:\dev\VS\VideoSearch\src\main.cpp(259,20): warning C4101: 'audioDevice': unreferenced local variable
+  VideoSearch.vcxproj -> C:\dev\VS\exe\Debug-x64\VideoSearch\VideoSearch.exe
