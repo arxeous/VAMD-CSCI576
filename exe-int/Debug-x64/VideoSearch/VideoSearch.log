@@ -1,13 +1,16 @@
-﻿  main.cpp
+﻿  VideoState.cpp
 C:\dev\VS\VideoSearch\vendor\ffmpeg\include\libavutil\rational.h(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (932). Save the file in Unicode format to prevent data loss
-C:\dev\VS\VideoSearch\src\main.cpp(367,21): warning C4244: 'initializing': conversion from 'int64_t' to 'int', possible loss of data
-C:\dev\VS\VideoSearch\src\main.cpp(531,64): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\dev\VS\VideoSearch\src\main.cpp(519,15): warning C4101: 'y': unreferenced local variable
-C:\dev\VS\VideoSearch\src\main.cpp(519,12): warning C4101: 'x': unreferenced local variable
-C:\dev\VS\VideoSearch\src\main.cpp(517,11): warning C4101: 'rect': unreferenced local variable
-C:\dev\VS\VideoSearch\src\main.cpp(857,17): warning C4244: '=': conversion from 'int64_t' to 'double', possible loss of data
-C:\dev\VS\VideoSearch\src\main.cpp(861,17): warning C4244: '=': conversion from 'int64_t' to 'double', possible loss of data
-C:\dev\VS\VideoSearch\src\main.cpp(896,39): warning C4018: '>=': signed/unsigned mismatch
-C:\dev\VS\VideoSearch\src\main.cpp(1070,20): warning C4018: '<': signed/unsigned mismatch
-C:\dev\VS\VideoSearch\src\main.cpp(1002): warning C4715: 'stream_component_open': not all control paths return a value
+C:\dev\VS\VideoSearch\src\VideoState.cpp(250,21): warning C4244: 'initializing': conversion from 'int64_t' to 'int', possible loss of data
+C:\dev\VS\VideoSearch\src\VideoState.cpp(389,64): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\dev\VS\VideoSearch\src\VideoState.cpp(377,15): warning C4101: 'y': unreferenced local variable
+C:\dev\VS\VideoSearch\src\VideoState.cpp(377,12): warning C4101: 'x': unreferenced local variable
+C:\dev\VS\VideoSearch\src\VideoState.cpp(375,11): warning C4101: 'rect': unreferenced local variable
+C:\dev\VS\VideoSearch\src\VideoState.cpp(680,17): warning C4244: '=': conversion from 'int64_t' to 'double', possible loss of data
+C:\dev\VS\VideoSearch\src\VideoState.cpp(684,17): warning C4244: '=': conversion from 'int64_t' to 'double', possible loss of data
+C:\dev\VS\VideoSearch\src\VideoState.cpp(719,39): warning C4018: '>=': signed/unsigned mismatch
+C:\dev\VS\VideoSearch\src\VideoState.cpp(893,20): warning C4018: '<': signed/unsigned mismatch
+  main.cpp
+C:\dev\VS\VideoSearch\vendor\ffmpeg\include\libavutil\rational.h(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (932). Save the file in Unicode format to prevent data loss
+  Generating Code...
+C:\dev\VS\VideoSearch\src\VideoState.cpp(825): warning C4715: 'stream_component_open': not all control paths return a value
   VideoSearch.vcxproj -> C:\dev\VS\exe\Debug-x64\VideoSearch\VideoSearch.exe
