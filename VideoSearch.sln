@@ -1,9 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.33927.289
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoSearch", "VideoSearch\VideoSearch.vcxproj", "{C3215B96-F201-42F9-86C1-D660C2D02E15}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoSearch", "VideoSearch\VideoSearch.vcxproj", "{12A5F040-7E5A-6936-074F-630D7303603A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +9,12 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C3215B96-F201-42F9-86C1-D660C2D02E15}.Debug|x64.ActiveCfg = Debug|x64
-		{C3215B96-F201-42F9-86C1-D660C2D02E15}.Debug|x64.Build.0 = Debug|x64
-		{C3215B96-F201-42F9-86C1-D660C2D02E15}.Release|x64.ActiveCfg = Release|x64
-		{C3215B96-F201-42F9-86C1-D660C2D02E15}.Release|x64.Build.0 = Release|x64
+		{12A5F040-7E5A-6936-074F-630D7303603A}.Debug|x64.ActiveCfg = Debug|x64
+		{12A5F040-7E5A-6936-074F-630D7303603A}.Debug|x64.Build.0 = Debug|x64
+		{12A5F040-7E5A-6936-074F-630D7303603A}.Release|x64.ActiveCfg = Release|x64
+		{12A5F040-7E5A-6936-074F-630D7303603A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {4AA381D3-5619-4620-8F27-2B220158D833}
 	EndGlobalSection
 EndGlobal
