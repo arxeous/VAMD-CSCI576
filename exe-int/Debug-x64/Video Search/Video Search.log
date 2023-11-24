@@ -1,3 +1,0 @@
-﻿  main.cpp
-D:\CSCI576\Project\VAMD-CSCI576\Video Search\Video Search\src\main.cpp(4,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
-  Video Search.vcxproj -> D:\CSCI576\Project\VAMD-CSCI576\Video Search\exe\Debug-x64\Video Search\Video Search.exe
