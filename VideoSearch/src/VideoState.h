@@ -1,4 +1,7 @@
 #pragma once
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 #include <cstdio>
 #include <stdio.h>
 #include <assert.h>
@@ -31,7 +34,8 @@ extern "C"
 #define FF_ALLOC_EVENT   (SDL_USEREVENT)
 #define FF_REFRESH_EVENT (SDL_USEREVENT + 1)
 #define FF_CREATE_WINDOW_EVENT (SDL_USEREVENT + 2)
-#define FF_QUIT_EVENT (SDL_USEREVENT + 3)
+#define FF_RESET_STREAM_EVENT (SDL_USEREVENT + 3)
+#define FF_QUIT_EVENT (SDL_USEREVENT + 4)
 
 #define VIDEO_PICTURE_QUEUE_SIZE 1
 
@@ -74,52 +78,58 @@ typedef struct VideoState {
 	int64_t				videoCurrPtsTime;
 	int					avSyncType;
 
-	AVFormatContext* pFormatCtx;
+	AVFormatContext*	pFormatCtx;
 	int                 videoStreamLoc, audioStreamLoc;
 	SDL_AudioDeviceID	dev;
-	AVStream* audioStream;
-	AVCodecContext* audioCtx;
+	AVStream*			audioStream;
+	AVCodecContext*		audioCtx;
 	PacketQueue         audioQ;
 	uint8_t             audioBuff[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 	unsigned int        audioBuffSize;
 	unsigned int        audioBuffIndex;
 	AVFrame             audioFrame;
 	AVPacket            audioPacket;
-	uint8_t* audioPacketData;
+	uint8_t*			audioPacketData;
 	int                 audioPacketSize;
 	double				audioDiffCum;		
 	double				audioDiffThreshold;
 	double				audioDiffAvgCoef;
 	int					audioDiffAvgCount;
 
-	AVStream* videoStream;
-	AVCodecContext* videoCtx;
+	AVStream*			videoStream;
+	AVCodecContext*		videoCtx;
 	PacketQueue         videoQ;
-	struct SwsContext* swsCtx;
-	struct SwrContext* resampler;
+	struct SwsContext*	swsCtx;
+	struct SwrContext*	resampler;
 
 	VideoWindow         pictQ[VIDEO_PICTURE_QUEUE_SIZE];
 	int                 pictQSize, pictQRIndex, pictQWIndex;
-	SDL_mutex* pictQMutex;
-	SDL_cond* pictQCond;
+	SDL_mutex*			pictQMutex;
+	SDL_cond*			pictQCond;
 
-	Uint8* yPlane, * uPlane, * vPlane;
+	Uint8*				yPlane, * uPlane, * vPlane;
 	size_t				yPlaneSz, uvPlaneSz;
 	int					uvPitch;
 
 
-	AVIOContext* ioCtx;
-	SDL_Thread* parseThreadId;
-	SDL_Thread* videoThreadId;
+	AVIOContext*		ioCtx;
+	SDL_Thread*			parseThreadId;
+	SDL_Thread*			videoThreadId;
+
+	bool				seek_req;
+	int					seek_flags;
+	int					seek_pos;
 
 	char                filename[1024];
-	bool                 quit;
+	bool                quit;
+	bool				pause;
 } VideoState;
 
 extern VideoState* global_video_state;
 extern SDL_Window* screen;
 extern SDL_Renderer* renderer;
 extern uint64_t global_video_pkt_pts;
+extern AVPacket flush_pkt;
 
 int decode_interrupt_cb(void* opaque);
 void packet_queue_init(PacketQueue* q);
@@ -140,6 +150,10 @@ double synchronize_video(VideoState* state, AVFrame* srcFrame, double pts);
 int video_thread(void* arg);
 int stream_component_open(VideoState* state, int stream_index);
 int decode_thread(void* arg);
+void display_controls();
+
+void stream_seek(VideoState* state, int64_t pos, int rel);
+void set_pause(VideoState* state);
 
 static Uint32 sdl_refresh_timer_cb(Uint32 interval, void* opaque)
 {
@@ -151,10 +165,28 @@ static Uint32 sdl_refresh_timer_cb(Uint32 interval, void* opaque)
 	return 0;
 }
 
-
-
 static void schedule_refresh(VideoState* state, int delay)
 {
-	printf("Schedule refresh for %i ms\n", delay);
+	//printf("Schedule refresh for %i ms\n", delay);
 	SDL_AddTimer(delay, sdl_refresh_timer_cb, state);
+}
+
+static void packet_queue_flush(PacketQueue* q)
+{
+	AVPacketList* pkt, * pkt1;
+	SDL_LockMutex(q->mutex);
+
+	for (pkt = q->firstPacket; pkt != NULL; pkt = pkt1)
+	{
+		pkt1 = pkt->next;
+		av_packet_unref(&pkt->pkt);
+		av_freep(&pkt);
+	}
+
+	q->lastPacket = NULL;
+	q->firstPacket = NULL;
+	q->nb_packets = 0;
+	q->size = 0;
+	SDL_UnlockMutex(q->mutex);
+
 }

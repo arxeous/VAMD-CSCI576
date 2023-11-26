@@ -4,6 +4,7 @@ uint64_t global_video_pkt_pts = AV_NOPTS_VALUE;
 VideoState* global_video_state;
 SDL_Window* screen;
 SDL_Renderer* renderer;
+AVPacket flush_pkt;
 
 int decode_interrupt_cb(void* opaque) {
 	return (global_video_state && global_video_state->quit);
@@ -20,12 +21,13 @@ int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
 	if (!pkt)
 	{
 		pkt = av_packet_alloc();
-		if (!pkt)
+		if (pkt != &flush_pkt && !pkt)
 		{
-			printf("Could not allocate packet -%s\n", SDL_GetError());
+			printf("Could not allocate packet or packet was another flush packet -%s\n", SDL_GetError());
 			return -1;
 		}
 	}
+
 	AVPacketList* pkt1;
 	pkt1 = (AVPacketList*)av_malloc(sizeof(AVPacketList));
 	if (pkt1 == NULL)
@@ -218,110 +220,119 @@ int audio_decode_frame(VideoState* state, double* pts_ptr)
 	double pts;
 
 	int ret;
-
-	for (;;)
+	if(!state->pause)
 	{
-		while (state->audioPacketSize > 0)
+		for (;;)
 		{
-
-			ret = avcodec_send_packet(state->audioCtx, pkt);
-			len1 = pkt->size;
-			if (ret < 0 || len1 < 0)
+			while (state->audioPacketSize > 0)
 			{
-				fprintf(stderr, "Error during sending packet - exiting\n");
-				state->audioPacketSize = 0;
-				break;
-			}
 
-			while (ret >= 0)
-			{
-				ret = avcodec_receive_frame(state->audioCtx, &state->audioFrame);
-				if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+				ret = avcodec_send_packet(state->audioCtx, pkt);
+				len1 = pkt->size;
+				if (ret < 0 || len1 < 0)
 				{
-					av_strerror(ret, errBuff, errBuffSize);
-					std::printf("%s AUDIO THREAD 1\n", errBuff);
-					break;
-				}
-				if (ret < 0)
-				{
-					fprintf(stderr, "Error during decoding - exiting\n");
-					exit(1);
-				}
-				int dst_samples = state->audioFrame.ch_layout.nb_channels * av_rescale_rnd(
-					swr_get_delay(state->resampler, state->audioFrame.sample_rate)
-					+ state->audioFrame.nb_samples,
-					44100,
-					state->audioFrame.sample_rate,
-					AV_ROUND_UP);
-				uint8_t* audiobuf = NULL;
-				ret = av_samples_alloc(&audiobuf,
-					NULL,
-					1,
-					dst_samples,
-					AV_SAMPLE_FMT_S16,
-					1);
-				dst_samples = state->audioFrame.ch_layout.nb_channels * swr_convert(
-					state->resampler,
-					&audiobuf,
-					dst_samples,
-					(const uint8_t**)state->audioFrame.data,
-					state->audioFrame.nb_samples);
-				ret = av_samples_fill_arrays(audioFrame->data,
-					audioFrame->linesize,
-					audiobuf,
-					1,
-					dst_samples,
-					AV_SAMPLE_FMT_S16,
-					1);
-
-				dataSize = audioFrame->linesize[0];
-
-				if (av_strerror(ret, errBuff, errBuffSize) == 0)
-				{
-					std::printf("%s AUDIO THREAD 2\n", errBuff);
+					fprintf(stderr, "Error during sending packet - exiting\n");
+					state->audioPacketSize = 0;
 					break;
 				}
 
-				memcpy(state->audioBuff, audioFrame->data[0], dataSize);
+				while (ret >= 0)
+				{
+					ret = avcodec_receive_frame(state->audioCtx, &state->audioFrame);
+					if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+					{
+						av_strerror(ret, errBuff, errBuffSize);
+						//std::printf("%s AUDIO THREAD 1\n", errBuff);
+						break;
+					}
+					if (ret < 0)
+					{
+						fprintf(stderr, "Error during decoding - exiting\n");
+						exit(1);
+					}
+					int dst_samples = state->audioFrame.ch_layout.nb_channels * av_rescale_rnd(
+						swr_get_delay(state->resampler, state->audioFrame.sample_rate)
+						+ state->audioFrame.nb_samples,
+						44100,
+						state->audioFrame.sample_rate,
+						AV_ROUND_UP);
+					uint8_t* audiobuf = NULL;
+					ret = av_samples_alloc(&audiobuf,
+						NULL,
+						1,
+						dst_samples,
+						AV_SAMPLE_FMT_S16,
+						1);
+					dst_samples = state->audioFrame.ch_layout.nb_channels * swr_convert(
+						state->resampler,
+						&audiobuf,
+						dst_samples,
+						(const uint8_t**)state->audioFrame.data,
+						state->audioFrame.nb_samples);
+					ret = av_samples_fill_arrays(audioFrame->data,
+						audioFrame->linesize,
+						audiobuf,
+						1,
+						dst_samples,
+						AV_SAMPLE_FMT_S16,
+						1);
+
+					dataSize = audioFrame->linesize[0];
+
+					if (av_strerror(ret, errBuff, errBuffSize) == 0)
+					{
+						//std::printf("%s AUDIO THREAD 2\n", errBuff);
+						break;
+					}
+
+					memcpy(state->audioBuff, audioFrame->data[0], dataSize);
+				}
+
+
+				state->audioPacketData += len1;
+				state->audioPacketSize -= len1;
+				if (dataSize <= 0)
+				{
+					continue;
+				}
+				pts = state->audioClock;
+				*pts_ptr = pts;
+				n = 2 * state->audioCtx->ch_layout.nb_channels;
+				state->audioClock += (double)dataSize / (double)(n * state->audioStream->codecpar->sample_rate);
+
+				return dataSize;
 			}
 
-
-			state->audioPacketData += len1;
-			state->audioPacketSize -= len1;
-			if (dataSize <= 0)
+			if (pkt->data)
 			{
+				av_packet_unref(pkt);
+			}
+			if (state->quit)
+			{
+				return -1;
+			}
+
+			// Get next packet
+			if (packet_queue_get(&state->audioQ, pkt, 1) < 0)
+			{
+				return -1;
+			}
+
+			if (pkt->opaque == flush_pkt.opaque)
+			{
+				avcodec_flush_buffers(state->audioCtx);
 				continue;
 			}
-			pts = state->audioClock;
-			*pts_ptr = pts;
-			n = 2 * state->audioCtx->ch_layout.nb_channels;
-			state->audioClock += (double)dataSize / (double)(n * state->audioStream->codecpar->sample_rate);
+			state->audioPacketData = pkt->data;
+			state->audioPacketSize = pkt->size;
 
-			return dataSize;
-		}
-
-		if (pkt->data)
-		{
-			av_packet_unref(pkt);
-		}
-		if (state->quit)
-		{
-			return -1;
-		}
-
-		// Get next packet
-		if (packet_queue_get(&state->audioQ, pkt, 1) < 0)
-		{
-			return -1;
-		}
-		state->audioPacketData = pkt->data;
-		state->audioPacketSize = pkt->size;
-
-		if (pkt->pts != AV_NOPTS_VALUE)
-		{
-			state->audioClock = av_q2d(state->audioStream->time_base) * pkt->pts;
+			if (pkt->pts != AV_NOPTS_VALUE)
+			{
+				state->audioClock = av_q2d(state->audioStream->time_base) * pkt->pts;
+			}
 		}
 	}
+	return -1;
 }
 
 // A simple loop that will pull in data from another function we have written called audio_decode_frame,
@@ -333,7 +344,7 @@ void audio_callback(void* userdata, Uint8* stream, int len)
 	int len1, audioSize;
 	double pts;
 
-	while (len > 0)
+	while (len > 0 )
 	{
 		if (state->audioBuffIndex >= state->audioBuffSize)
 		{
@@ -365,7 +376,44 @@ void audio_callback(void* userdata, Uint8* stream, int len)
 	}
 
 }
+void display_controls(VideoState* state)
+{
+	ImGui_ImplSDLRenderer2_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+	VideoWindow* vw = &state->pictQ[state->pictQRIndex];
 
+	ImGui::Begin("Controls");
+
+	if (ImGui::Button("Pause"))
+	{
+		state->pause = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Play"))
+	{
+		state->pause = false;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Reset"))
+	{
+		SDL_Event event;
+		event.type = FF_RESET_STREAM_EVENT;
+		SDL_PushEvent(&event);
+	}
+
+	ImGui::End();
+	ImGui::Render();
+
+	if (state->pause)
+	{
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, vw->texture, NULL, NULL);
+		ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+		SDL_RenderPresent(renderer);
+	}
+
+}
 
 
 
@@ -411,11 +459,17 @@ void video_display(VideoState* state)
 			state->uvPitch
 		);
 
+	
+
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, vw->texture, NULL, NULL);
+		display_controls(state);
+		ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 		SDL_RenderPresent(renderer);
 	}
 }
+
+
 
 void video_refresh_timer(void* userdata) {
 
@@ -423,8 +477,12 @@ void video_refresh_timer(void* userdata) {
 	VideoWindow* vw;
 	double actual_delay, delay, sync_threshold, ref_clock, diff;
 
-	if (state->videoStream) {
-		if (state->pictQSize == 0) {
+	if (state->videoStream)
+	{
+		
+		if (state->pictQSize == 0) 
+		{
+			display_controls(state);
 			schedule_refresh(state, 1);
 		}
 		else {
@@ -482,7 +540,8 @@ void video_refresh_timer(void* userdata) {
 			SDL_UnlockMutex(state->pictQMutex);
 		}
 	}
-	else {
+	else 
+	{
 		schedule_refresh(state, 100);
 	}
 }
@@ -529,7 +588,7 @@ int queue_picture(VideoState* state, AVFrame* pFrame, double pts)
 
 	while (state->pictQSize >= VIDEO_PICTURE_QUEUE_SIZE && !state->quit)
 	{
-		printf("waiting for condition signal as we have too many items in the queue\n");
+		//printf("waiting for condition signal as we have too many items in the queue\n");
 		SDL_CondWait(state->pictQCond, state->pictQMutex);
 	}
 	SDL_UnlockMutex(state->pictQMutex);
@@ -639,65 +698,74 @@ int video_thread(void* arg)
 
 	for (;;)
 	{
-		std::printf("We are currently in the video thread, getting packets from the queue.\n");
-		if (packet_queue_get(&state->videoQ, packet, 1) < 0)
+		//std::printf("We are currently in the video thread, getting packets from the queue.\n");
+		if (!state->pause)
 		{
-			// We quit getting packets
-			break;
-		}
-		pts = 0;
-		global_video_pkt_pts = packet->pts;
-
-		ret = avcodec_send_packet(state->videoCtx, packet);
-		if (ret < 0)
-		{
-			fprintf(stderr, "Error during sending packet - exiting\n");
-			exit(1);
-		}
-
-
-
-		while (ret >= 0)
-		{
-			ret = avcodec_receive_frame(state->videoCtx, pFrame);
-			// Did we recieve a frame??
-			if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+			if (packet_queue_get(&state->videoQ, packet, 1) < 0)
 			{
-				av_strerror(ret, errBuff, errBuffSize);
-				std::printf("%s VIDEO THREAD\n", errBuff);
+				// We quit getting packets
 				break;
 			}
+			if (packet->opaque == flush_pkt.opaque)
+			{
+				avcodec_flush_buffers(state->videoCtx);
+				continue;
+			}
+			pts = 0;
+			global_video_pkt_pts = packet->pts;
+
+			ret = avcodec_send_packet(state->videoCtx, packet);
 			if (ret < 0)
 			{
-				fprintf(stderr, "Error during decoding - exiting\n");
+				fprintf(stderr, "Error during sending packet - exiting\n");
 				exit(1);
 			}
 
 
-			if (packet->dts == AV_NOPTS_VALUE && pFrame->pts > 0 && pFrame->pts != AV_NOPTS_VALUE)
-			{
-				//pts = *(uint64_t*)pFrame->opaque;
-				pts = pFrame->pts;
-			}
-			else if (packet->dts != AV_NOPTS_VALUE)
-			{
-				pts = packet->dts;
-			}
-			else
-			{
-				pts = 0;
-			}
-			pts *= av_q2d(state->videoStream->time_base);
 
-			pts = synchronize_video(state, pFrame, pts);
-
-			if (queue_picture(state, pFrame, pts) < 0)
+			while (ret >= 0)
 			{
-				break;
-			}
+				ret = avcodec_receive_frame(state->videoCtx, pFrame);
+				// Did we recieve a frame??
+				if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+				{
+					av_strerror(ret, errBuff, errBuffSize);
+					//std::printf("%s VIDEO THREAD\n", errBuff);
+					break;
+				}
+				if (ret < 0)
+				{
+					fprintf(stderr, "Error during decoding - exiting\n");
+					exit(1);
+				}
 
+
+				if (packet->dts == AV_NOPTS_VALUE && pFrame->pts > 0 && pFrame->pts != AV_NOPTS_VALUE)
+				{
+					//pts = *(uint64_t*)pFrame->opaque;
+					pts = pFrame->pts;
+				}
+				else if (packet->dts != AV_NOPTS_VALUE)
+				{
+					pts = packet->dts;
+				}
+				else
+				{
+					pts = 0;
+				}
+				pts *= av_q2d(state->videoStream->time_base);
+
+				pts = synchronize_video(state, pFrame, pts);
+
+				if (queue_picture(state, pFrame, pts) < 0)
+				{
+					break;
+				}
+
+			}
+			av_packet_unref(packet);
 		}
-		av_packet_unref(packet);
+
 	}
 
 	av_frame_unref(pFrame);
@@ -845,6 +913,7 @@ int decode_thread(void* arg)
 
 	state->videoStreamLoc = -1;
 	state->audioStreamLoc = -1;
+	state->pause = false;
 	AVDictionary* io_dict = NULL;
 	AVIOInterruptCB callback;
 
@@ -866,7 +935,7 @@ int decode_thread(void* arg)
 	{
 		std::printf("Could not open file\n");
 		av_strerror(errCode, errBuff, errBuffSize);
-		std::printf("%s DECODE THREAD\n", errBuff);
+		//std::printf("%s DECODE THREAD\n", errBuff);
 		return -1;
 	}
 	// Set the format context of our global state
@@ -882,7 +951,7 @@ int decode_thread(void* arg)
 	{
 		std::printf("Could not read packets from stream\n");
 		av_strerror(errCode, errBuff, errBuffSize);
-		std::printf("%s DECODE THREAD\n", errBuff);
+		//std::printf("%s DECODE THREAD\n", errBuff);
 		return -1;
 	}
 
@@ -932,36 +1001,85 @@ int decode_thread(void* arg)
 		{
 			break;
 		}
-		if (state->audioQ.size > MAX_AUDIOQ_SIZE || state->videoQ.size > MAX_VIDEOQ_SIZE)
+		if (!state->pause)
 		{
-			SDL_Delay(1);
-			continue;
-		}
-		if (av_read_frame(state->pFormatCtx, packet) < 0)
-		{
-			if (state->pFormatCtx->pb->error == 0)
+			if (state->seek_req)
 			{
-				SDL_Delay(100);
+				int stream_index = -1;
+				int64_t seek_target = state->seek_pos;
+
+				if (state->videoStreamLoc >= 0)
+				{
+					stream_index = state->videoStreamLoc;
+				}
+				else if (state->audioStreamLoc >= 0)
+				{
+					stream_index = state->audioStreamLoc;
+				}
+
+				if (stream_index >= 0)
+				{
+					seek_target = av_rescale_q(seek_target, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index]->time_base);
+				}
+				errCode = av_seek_frame(pFormatCtx, stream_index, seek_target, state->seek_flags);
+				if (errCode < 0)
+				{
+					std::printf("Error while seeking.\n");
+					av_strerror(errCode, errBuff, errBuffSize);
+					//std::printf("%s DECODE THREAD SEEKING LOOP\n", errBuff);
+				}
+				else
+				{
+					if (state->audioStreamLoc >= 0)
+					{
+						packet_queue_flush(&state->audioQ);
+						packet_queue_put(&state->audioQ, &flush_pkt);
+					}
+					if (state->videoStreamLoc >= 0)
+					{
+						packet_queue_flush(&state->videoQ);
+						packet_queue_put(&state->videoQ, &flush_pkt);
+					}
+				}
+
+				state->seek_req = false;
+			}
+
+			if (state->audioQ.size > MAX_AUDIOQ_SIZE || state->videoQ.size > MAX_VIDEOQ_SIZE)
+			{
+				SDL_Delay(1);
 				continue;
+			}
+			if (av_read_frame(state->pFormatCtx, packet) < 0)
+			{
+				if (state->pFormatCtx->pb->error == 0)
+				{
+					SDL_Delay(100);
+					continue;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			if (packet->stream_index == state->videoStreamLoc)
+			{
+				//printf("This should be a thread running decode_thread, and we are currently placing a video packet in our q\n");
+				packet_queue_put(&state->videoQ, packet);
+			}
+			else if (packet->stream_index == state->audioStreamLoc)
+			{
+				packet_queue_put(&state->audioQ, packet);
 			}
 			else
 			{
-				break;
+				av_packet_unref(packet);
 			}
+
 		}
-		if (packet->stream_index == state->videoStreamLoc)
-		{
-			//printf("This should be a thread running decode_thread, and we are currently placing a video packet in our q\n");
-			packet_queue_put(&state->videoQ, packet);
-		}
-		else if (packet->stream_index == state->audioStreamLoc)
-		{
-			packet_queue_put(&state->audioQ, packet);
-		}
-		else
-		{
-			av_packet_unref(packet);
-		}
+		
+
 	}
 
 	delete[] errBuff;
@@ -985,4 +1103,19 @@ fail:
 
 
 	return 0;
+}
+
+void stream_seek(VideoState* state, int64_t pos, int rel)
+{
+	if (!state->seek_req)
+	{
+		state->seek_pos = pos;
+		state->seek_flags = rel < 0 ? AVSEEK_FLAG_BACKWARD : 0;
+		state->seek_req = true;
+	}
+}
+
+void set_pause(VideoState* state)
+{
+	state->pause = !state->pause;
 }
