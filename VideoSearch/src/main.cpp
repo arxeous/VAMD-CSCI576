@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
 	strncpy_s(video->filename, argv[1], sizeof(video->filename));
 	video->pictQMutex = SDL_CreateMutex();
 	video->pictQCond = SDL_CreateCond();
+	video->avSyncType = DEFAULT_AV_SYNC_TYPE;
 
 	schedule_refresh(video, 40);
 	// Spawns a thread that starts running on the function we pass it along with user defined data
@@ -103,13 +104,12 @@ int main(int argc, char* argv[])
 				if (global_video_state)
 				{
 					pos = get_master_clock(global_video_state);
-					std::printf("Position: %f\n New Position: %f\n\n", pos, pos + increment);
 					pos += increment;
 					stream_seek(global_video_state, (int64_t)(pos * AV_TIME_BASE), increment);
 				}
 				break;
 			case SDLK_SPACE:
-				std::printf("PAUSE\n");
+				std::printf("\nPAUSE\n");
 				set_pause(global_video_state);
 				break;
 			}

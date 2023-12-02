@@ -7,6 +7,7 @@
 #include <assert.h>
 #include "SDL.h"
 #include "SDL_thread.h"
+#include <inttypes.h>
 
 //  ffmpeg requires C linkage, not C++. Youre gonna need this extern "c" for all of its libraries
 extern "C"
@@ -69,6 +70,9 @@ typedef struct VideoWindow
 
 typedef struct VideoState {
 
+	double				pauseTime;
+	double				resumeTime;
+	double				pauseDuration;
 	double				videoClock; 
 	double				audioClock;
 	double				frameTimer;
@@ -123,6 +127,7 @@ typedef struct VideoState {
 	char                filename[1024];
 	bool                quit;
 	bool				pause;
+	bool				usePauseTime;
 } VideoState;
 
 extern VideoState* global_video_state;
