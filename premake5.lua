@@ -21,13 +21,16 @@ project "VideoSearch"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/ImGui/**.cpp",
+		"%{prj.name}/vendor/ImGui/**.h",
 	}
 
 	includedirs
 	{
 		"%{prj.name}/vendor/ffmpeg/include",
-		"%{prj.name}/vendor/SDL2/include"
+		"%{prj.name}/vendor/SDL2/include",
+		"%{prj.name}/vendor/ImGui",
 	}
 
 	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib" }
