@@ -234,7 +234,10 @@ int audio_decode_frame(VideoState* state, double* pts_ptr)
 	{
 		while (state->audioPacketSize > 0)
 		{
-
+			if (state->reset)
+			{
+				return 0;
+			}
 			ret = avcodec_send_packet(state->audioCtx, pkt);
 			len1 = pkt->size;
 			if (ret < 0 || len1 < 0)
@@ -353,6 +356,10 @@ void audio_callback(void* userdata, Uint8* stream, int len)
 
 	while (len > 0 )
 	{
+		if (state->reset)
+		{
+			return;
+		}
 		if (!state->pause)
 		{
 			if (state->audioBuffIndex >= state->audioBuffSize)
@@ -730,6 +737,12 @@ int video_thread(void* arg)
 	for (;;)
 	{
 		//std::printf("We are currently in the video thread, getting packets from the queue.\n");
+		if (state->reset)
+		{
+			av_frame_unref(pFrame);
+			delete[] errBuff;
+			return 0;
+		}
 		if (!state->pause)
 		{
 			if (packet_queue_get(&state->videoQ, packet, 1) < 0)
@@ -1030,7 +1043,7 @@ int decode_thread(void* arg)
 	// Its just a loop that reads in packets and puts them into the right queue
 	for (;;)
 	{
-		if (state->quit)
+		if (state->quit || state->reset)
 		{
 			break;
 		}
@@ -1133,6 +1146,10 @@ int decode_thread(void* arg)
 	// This code in particular is to have the code wait for either the program to end, or informing it that weve ended
 	while (!state->quit)
 	{
+		if (state->reset)
+		{
+			return 0;
+		}
 		SDL_Delay(100);
 	}
 
