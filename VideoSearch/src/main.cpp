@@ -32,7 +32,8 @@ int main(int argc, char* argv[])
 	for (;;)
 	{
 		double increment, pos;
-		SDL_WaitEvent(&event);
+		int result;
+		result = SDL_WaitEvent(&event);
 		if (renderer)
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "SDL: Could not create renderer - exiting\n");
 				exit(1);
 			}
-			else
+			else if(ImGui::GetCurrentContext() == NULL)
 			{
 				IMGUI_CHECKVERSION();
 				ImGui::CreateContext();
@@ -83,7 +84,34 @@ int main(int argc, char* argv[])
 			break;
 		// Key stroke catch
 		case FF_RESET_STREAM_EVENT:
-			stream_seek(global_video_state, 0, -1);
+			video->reset = true;
+			SDL_WaitThread(video->parseThreadId, NULL);
+			SDL_PauseAudioDevice(video->dev, 1);
+			SDL_CloseAudioDevice(video->dev);
+			avformat_close_input(&video->pFormatCtx);
+			av_free(video);
+			video = (VideoState*)av_mallocz(sizeof(VideoState));
+			strncpy_s(video->filename, argv[1], sizeof(video->filename));
+			video->pictQMutex = SDL_CreateMutex();
+			video->pictQCond = SDL_CreateCond();
+			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
+			video->videoStream = NULL;
+			schedule_refresh(video, 40);
+			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
+			global_video_state = video;
+			SDL_Event event3;
+			while (SDL_PollEvent(&event3)) {
+				// Discard the event
+			}
+			ImGui_ImplSDLRenderer2_Shutdown();
+			ImGui_ImplSDL2_Shutdown();
+			ImGui::DestroyContext();
+
+			SDL_DestroyRenderer(renderer);
+			renderer = NULL;
+			SDL_DestroyWindow(screen);
+			screen = NULL;
+
 			break;
 		case SDL_KEYDOWN:
 			switch (event.key.keysym.sym) 

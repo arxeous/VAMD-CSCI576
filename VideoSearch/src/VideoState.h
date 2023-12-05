@@ -127,7 +127,7 @@ typedef struct VideoState {
 	char                filename[1024];
 	bool                quit;
 	bool				pause;
-	bool				usePauseTime;
+	bool				reset;
 } VideoState;
 
 extern VideoState* global_video_state;
