@@ -24,6 +24,7 @@ project "VideoSearch"
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/ImGui/**.cpp",
 		"%{prj.name}/vendor/ImGui/**.h",
+		"%{prj.name}/vendor/AudioFile/**.h"
 	}
 
 	includedirs
@@ -31,9 +32,11 @@ project "VideoSearch"
 		"%{prj.name}/vendor/ffmpeg/include",
 		"%{prj.name}/vendor/SDL2/include",
 		"%{prj.name}/vendor/ImGui",
+		"%{prj.name}/vendor/fftw3/include",
+		"%{prj.name}/vendor/AudioFile"
 	}
 
-	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib" }
+	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib" }
 
 	links
 	{
@@ -46,7 +49,8 @@ project "VideoSearch"
 		"avutil",
 		"postproc",
 		"swresample",
-		"swscale"
+		"swscale",
+		"libfftw3-3"
 	}
 
 	filter "configurations:Debug"
@@ -63,5 +67,6 @@ project "VideoSearch"
 		postbuildcommands
 		{
 			"xcopy /Q /Y /I %{prj.location}\\vendor\\ffmpeg\\lib\\*.dll %{cfg.buildtarget.directory}",
-			"xcopy /Q /Y /I %{prj.location}\\vendor\\SDL2\\lib\\*.dll %{cfg.buildtarget.directory}"
+			"xcopy /Q /Y /I %{prj.location}\\vendor\\SDL2\\lib\\*.dll %{cfg.buildtarget.directory}",
+			"xcopy /Q /Y /I %{prj.location}\\vendor\\fftw3\\lib\\*.dll %{cfg.buildtarget.directory}"
 		}
