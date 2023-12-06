@@ -155,10 +155,10 @@ int synchronize_audio(VideoState* state, short* samples, int samples_size, doubl
 		double diff, avg_diff;
 		int wanted_size, min_size, max_size; // # of samples.
 		ref_clock = get_master_clock(state);
-		printf("Master clock time sync audio thread: %f\n", ref_clock);
+		//printf("Master clock time sync audio thread: %f\n", ref_clock);
 		diff = get_audio_clock(state) - ref_clock;
 
-		printf("Audio clock: %f\n", get_audio_clock(state));
+		//printf("Audio clock: %f\n", get_audio_clock(state));
 		//printf("Diff: %f\n", diff);
 
 
@@ -712,7 +712,7 @@ double synchronize_video(VideoState* state, AVFrame* srcFrame, double pts) {
 	/* if we are repeating a frame, adjust clock accordingly */
 	frame_delay += srcFrame->repeat_pict * (frame_delay * 0.5);
 	state->videoClock += frame_delay;
-	printf("Video Clock sync video: %f\n", state->videoClock);
+	//printf("Video Clock sync video: %f\n", state->videoClock);
 	return pts;
 }
 
