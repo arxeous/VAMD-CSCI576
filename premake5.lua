@@ -34,9 +34,8 @@ project "VideoSearch"
 		"%{prj.name}/vendor/SDL2/include",
 		"%{prj.name}/vendor/ImGui",
 		"%{prj.name}/vendor/fftw3/include",
-		"%{prj.name}/vendor/AudioFile"
+		"%{prj.name}/vendor/AudioFile",
 		"%{prj.name}/vendor/nativefiledialog/include"
-
 	}
 
 	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib", "%{prj.name}/vendor/nativefiledialog/lib" }
