@@ -54,12 +54,9 @@ project "VideoSearch"
 		"postproc",
 		"swresample",
 		"swscale",
-<<<<<<< HEAD
-		"libfftw3-3"
-=======
+		"libfftw3-3",
 		"nfd_d",
 		"comctl32"
->>>>>>> 8821f387004a597778f4bc17336579f0efe6da11
 	}
 
 	filter "configurations:Debug"
