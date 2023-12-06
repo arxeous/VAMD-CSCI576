@@ -177,6 +177,7 @@ int main(int argc, char* argv[])
 	
 	SDL_Event event;
 	VideoState* video;
+	char newFile[1024];
 	av_init_packet(&flush_pkt);
 	flush_pkt.opaque = "FLUSH";
 		
@@ -192,6 +193,9 @@ int main(int argc, char* argv[])
 	video->pictQMutex = SDL_CreateMutex();
 	video->pictQCond = SDL_CreateCond();
 	video->avSyncType = DEFAULT_AV_SYNC_TYPE;
+	video->seek_pos = (int64_t)(15 * AV_TIME_BASE);
+	video->seek_req = true;
+	video->seek_flags = AVSEEK_FLAG_BACKWARD;
 
 	schedule_refresh(video, 40);
 	// Spawns a thread that starts running on the function we pass it along with user defined data
@@ -257,63 +261,38 @@ int main(int argc, char* argv[])
 			break;
 		// Key stroke catch
 		case FF_RESET_STREAM_EVENT:
-			video->reset = true;
+			// Clean up
+			strncpy_s(newFile, 1024, video->nextQuery, 1024);
 			SDL_WaitThread(video->parseThreadId, NULL);
 			SDL_PauseAudioDevice(video->dev, 1);
 			SDL_CloseAudioDevice(video->dev);
 			avformat_close_input(&video->pFormatCtx);
 			av_free(video);
-			video = (VideoState*)av_mallocz(sizeof(VideoState));
-			strncpy_s(video->filename, argv[1], sizeof(video->filename));
-			video->pictQMutex = SDL_CreateMutex();
-			video->pictQCond = SDL_CreateCond();
-			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
-			video->videoStream = NULL;
-			schedule_refresh(video, 40);
-			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
-			global_video_state = video;
-			SDL_Event event3;
-			while (SDL_PollEvent(&event3)) {
-				// Discard the event
-			}
 			ImGui_ImplSDLRenderer2_Shutdown();
 			ImGui_ImplSDL2_Shutdown();
 			ImGui::DestroyContext();
-
 			SDL_DestroyRenderer(renderer);
 			renderer = NULL;
 			SDL_DestroyWindow(screen);
 			screen = NULL;
 
-			break;
-		case SDL_KEYDOWN:
-			switch (event.key.keysym.sym) 
-			{
-			case SDLK_LEFT:
-				increment = -1.0;
-				goto do_seek;
-			case SDLK_RIGHT:
-				increment = 1.0;
-				goto do_seek;
-			case SDLK_UP:
-				increment = 5.0;
-				goto do_seek;
-			case SDLK_DOWN:
-				increment = -5.0;
-				goto do_seek;
-			do_seek:
-				if (global_video_state)
-				{
-					pos = get_master_clock(global_video_state);
-					pos += increment;
-					stream_seek(global_video_state, (int64_t)(pos * AV_TIME_BASE), increment);
-				}
-				break;
-			case SDLK_SPACE:
-				std::printf("\nPAUSE\n");
-				set_pause(global_video_state);
-				break;
+			//Re initialization of video
+			video = (VideoState*)av_mallocz(sizeof(VideoState));
+			strncpy_s(video->filename, newFile, sizeof(video->filename));
+			video->pictQMutex = SDL_CreateMutex();
+			video->pictQCond = SDL_CreateCond();
+			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
+			video->videoStream = NULL;
+			schedule_refresh(video, 40);
+			global_video_state = video;
+
+			// Clearing out event buffer for previous video.
+			SDL_Event event3;
+			while (SDL_PollEvent(&event3)) {
+				// Discard the event
 			}
+			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
+			break;
 		default:
 			break;
 		}

@@ -24,7 +24,8 @@ project "VideoSearch"
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/ImGui/**.cpp",
 		"%{prj.name}/vendor/ImGui/**.h",
-		"%{prj.name}/vendor/AudioFile/**.h"
+		"%{prj.name}/vendor/AudioFile/**.h",
+		"%{prj.name}/vendor/nativefiledialog/**.cpp"
 	}
 
 	includedirs
@@ -34,9 +35,12 @@ project "VideoSearch"
 		"%{prj.name}/vendor/ImGui",
 		"%{prj.name}/vendor/fftw3/include",
 		"%{prj.name}/vendor/AudioFile"
+		"%{prj.name}/vendor/nativefiledialog/include"
+
 	}
 
-	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib" }
+	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib", "%{prj.name}/vendor/nativefiledialog/lib" }
+
 
 	links
 	{
@@ -50,7 +54,12 @@ project "VideoSearch"
 		"postproc",
 		"swresample",
 		"swscale",
+<<<<<<< HEAD
 		"libfftw3-3"
+=======
+		"nfd_d",
+		"comctl32"
+>>>>>>> 8821f387004a597778f4bc17336579f0efe6da11
 	}
 
 	filter "configurations:Debug"
