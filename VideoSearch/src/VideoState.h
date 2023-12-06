@@ -18,6 +18,7 @@ extern "C"
 #include"libavutil/imgutils.h"
 #include "libavutil/time.h"
 #include "libswresample/swresample.h"
+#include "nfd.h"
 }
 
 #define SDL_AUDIO_BUFFER_SIZE 1024
@@ -36,7 +37,8 @@ extern "C"
 #define FF_REFRESH_EVENT (SDL_USEREVENT + 1)
 #define FF_CREATE_WINDOW_EVENT (SDL_USEREVENT + 2)
 #define FF_RESET_STREAM_EVENT (SDL_USEREVENT + 3)
-#define FF_QUIT_EVENT (SDL_USEREVENT + 4)
+#define FF_NEXT_QUERY_EVENT (SDL_USEREVENT + 4)
+#define FF_QUIT_EVENT (SDL_USEREVENT + 5)
 
 #define VIDEO_PICTURE_QUEUE_SIZE 1
 
@@ -125,6 +127,7 @@ typedef struct VideoState {
 	int					seek_pos;
 
 	char                filename[1024];
+	char				nextQuery[1024];
 	bool                quit;
 	bool				pause;
 	bool				reset;
@@ -155,10 +158,7 @@ double synchronize_video(VideoState* state, AVFrame* srcFrame, double pts);
 int video_thread(void* arg);
 int stream_component_open(VideoState* state, int stream_index);
 int decode_thread(void* arg);
-void display_controls();
-
 void stream_seek(VideoState* state, int64_t pos, int rel);
-void set_pause(VideoState* state);
 
 static Uint32 sdl_refresh_timer_cb(Uint32 interval, void* opaque)
 {
