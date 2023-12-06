@@ -157,12 +157,8 @@ int synchronize_audio(VideoState* state, short* samples, int samples_size, doubl
 		ref_clock = get_master_clock(state);
 		//printf("Master clock time sync audio thread: %f\n", ref_clock);
 		diff = get_audio_clock(state) - ref_clock;
-<<<<<<< HEAD
 
 		//printf("Audio clock: %f\n", get_audio_clock(state));
-=======
-		printf("Audio clock: %f\n", get_audio_clock(state));
->>>>>>> 8821f387004a597778f4bc17336579f0efe6da11
 		//printf("Diff: %f\n", diff);
 
 
@@ -431,11 +427,11 @@ void display_controls(VideoState* state)
 	if (ImGui::Button("Reset"))
 	{
 		printf("\nRESET\n");
-		state->reset = true;
+		state->videoCurrPtsTime = av_gettime();
 		SDL_Event event;
-		strncpy_s(state->nextQuery, 1024, state->filename, 1024);
 		event.type = FF_RESET_STREAM_EVENT;
 		SDL_PushEvent(&event);
+		state->pauseDuration = 0;
 	}
 
 	ImGui::SameLine();
