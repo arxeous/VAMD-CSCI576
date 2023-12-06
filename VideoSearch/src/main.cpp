@@ -9,6 +9,9 @@
 
 int main(int argc, char* argv[])
 {	
+	int final_video_prediction = 0;
+	double final_second_prediction = 0; //This should ultimately have the predicted start time in seconds
+	
 	int num_peaks = 8; //The number of peaks to find in a window
 	int subband_limits[8] = { 250, 500, 1000, 2000, 3000, 4000, 5000, 6000 }; //Define subbands to look for peaks V1
 	int pred_milli; //Returns the millisecond at which Shazam predicts the start to be. Will be -1 if no good result found.
@@ -167,6 +170,8 @@ int main(int argc, char* argv[])
 		printf("Predicted video: %d\n", best_map);
 		printf("Predicted beginning in milli: %d\n", pred_milli);
 		printf("Predicted beginning frame: %d\n\n", pred_frame);
+		final_second_prediction = pred_milli / 1000.0;
+		final_video_prediction = best_map;
 	}
 	else {
 		printf("SHAZAM:\nNo good Shazam prediction.\n\n");
@@ -189,11 +194,16 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	strncpy_s(video->filename, argv[1], sizeof(video->filename));
+	std::string mp4_dir = "orig_mp4/";
+	std::string mp4_a = "video";
+	std::string mp4_b = ".mp4";
+	std::string play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
+
+	strncpy_s(video->filename, play_this.c_str(), sizeof(video->filename));
 	video->pictQMutex = SDL_CreateMutex();
 	video->pictQCond = SDL_CreateCond();
 	video->avSyncType = DEFAULT_AV_SYNC_TYPE;
-	video->seek_pos = (int64_t)(15 * AV_TIME_BASE);
+	video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
 	video->seek_req = true;
 	video->seek_flags = AVSEEK_FLAG_BACKWARD;
 

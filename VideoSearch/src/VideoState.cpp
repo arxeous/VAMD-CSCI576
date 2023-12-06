@@ -1087,7 +1087,7 @@ int decode_thread(void* arg)
 				errCode = av_seek_frame(pFormatCtx, stream_index, seek_target, state->seek_flags);
 				while (av_read_frame(state->pFormatCtx, packet) >= 0)
 				{
-					printf("Time while reading frames %f\n", state->audioClock);
+					//printf("Time while reading frames %f\n", state->audioClock);
 					if (packet->stream_index == state->videoStreamLoc)
 					{
 
