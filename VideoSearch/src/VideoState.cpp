@@ -426,6 +426,7 @@ void display_controls(VideoState* state)
 	ImGui::SameLine();
 	if (ImGui::Button("Reset"))
 	{
+		state->reset = true;
 		printf("\nRESET\n");
 		state->videoCurrPtsTime = av_gettime();
 		SDL_Event event;
