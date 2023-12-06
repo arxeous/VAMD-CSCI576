@@ -428,11 +428,11 @@ void display_controls(VideoState* state)
 	{
 		state->reset = true;
 		printf("\nRESET\n");
-		state->videoCurrPtsTime = av_gettime();
 		SDL_Event event;
+		strncpy_s(state->nextQuery, 1024, state->filename, 1024);
 		event.type = FF_RESET_STREAM_EVENT;
 		SDL_PushEvent(&event);
-		state->pauseDuration = 0;
+		
 	}
 
 	ImGui::SameLine();
@@ -1121,22 +1121,8 @@ int decode_thread(void* arg)
 				{
 					std::printf("Error while seeking.\n");
 					av_strerror(errCode, errBuff, errBuffSize);
-					//std::printf("%s DECODE THREAD SEEKING LOOP\n", errBuff);
 				}
-				//else
-				//{
-				//	if (state->audioStreamLoc >= 0)
-				//	{
-				//		packet_queue_flush(&state->audioQ);
-				//		packet_queue_put(&state->audioQ, &flush_pkt);
-				//	}
-				//	if (state->videoStreamLoc >= 0)
-				//	{
-				//		packet_queue_flush(&state->videoQ);
-				//		packet_queue_put(&state->videoQ, &flush_pkt);
-				//		
-				//	}
-				//}
+
 
 				state->seek_req = false;
 			}
