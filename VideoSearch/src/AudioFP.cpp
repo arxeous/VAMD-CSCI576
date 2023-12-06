@@ -39,49 +39,55 @@ void linear_model_ransac(int* data, int size, int max_iter, double thresh, doubl
         }
     }
 
-    int min_inliers = static_cast<int>(floor(min_inlier_perc * num_nonzero));
+    //Minimum number of matches required to be valid
+    if (num_nonzero >= 5) {
+        int min_inliers = static_cast<int>(floor(min_inlier_perc * num_nonzero));
 
-    //Perform RANSAC
-    for (int iter = 0; iter < max_iter; iter++) {
-        int idx1 = nonzero_idx[rand() % num_nonzero];
-        int idx2 = nonzero_idx[rand() % num_nonzero];
-        int val1 = data[idx1];
-        int val2 = data[idx2];
-        double slope = (static_cast<double>(val1) - val2) / (static_cast<double>(idx1) - idx2);
-        double y_inter = val1 - slope * idx1;
+        //Perform RANSAC
+        for (int iter = 0; iter < max_iter; iter++) {
+            int idx1 = nonzero_idx[rand() % num_nonzero];
+            int idx2 = nonzero_idx[rand() % num_nonzero];
+            int val1 = data[idx1];
+            int val2 = data[idx2];
+            double slope = (static_cast<double>(val1) - val2) / (static_cast<double>(idx1) - idx2);
+            double y_inter = val1 - slope * idx1;
 
-        double this_a = -slope;
-        double this_b = 1;
-        double this_c = -y_inter;
+            double this_a = -slope;
+            double this_b = 1;
+            double this_c = -y_inter;
 
-        std::vector<int> confirmed_inliers;
-        int num_inliers = 0;
-        for (int i = 0; i < num_nonzero; i++) {
-            int this_x = nonzero_idx[i];
-            int this_y = data[this_x];
-            double dist = dist_from_line(this_x, this_y, this_a, this_b, this_c);
-            if (dist < thresh) {
-                confirmed_inliers.push_back(this_x);
-                num_inliers++;
-            }
-        }
-
-        if (num_inliers > min_inliers) {
-            double this_err = 0;
-            for (int i = 0; i < num_inliers; i++) {
-                int this_x = confirmed_inliers[i];
+            std::vector<int> confirmed_inliers;
+            int num_inliers = 0;
+            for (int i = 0; i < num_nonzero; i++) {
+                int this_x = nonzero_idx[i];
                 int this_y = data[this_x];
-                this_err += dist_from_line(this_x, this_y, this_a, this_b, this_c);
+                double dist = dist_from_line(this_x, this_y, this_a, this_b, this_c);
+                if (dist < thresh) {
+                    confirmed_inliers.push_back(this_x);
+                    num_inliers++;
+                }
             }
-            if (this_err < best_err) {
-                best_a = this_a;
-                best_b = this_b;
-                best_c = this_c;
 
-                best_err = this_err;
+            if (num_inliers > min_inliers) {
+                double this_err = 0;
+                for (int i = 0; i < num_inliers; i++) {
+                    int this_x = confirmed_inliers[i];
+                    int this_y = data[this_x];
+                    this_err += dist_from_line(this_x, this_y, this_a, this_b, this_c);
+                }
+                if (this_err < best_err) {
+                    best_a = this_a;
+                    best_b = this_b;
+                    best_c = this_c;
+
+                    best_err = this_err;
+                }
             }
         }
+
     }
+
+    
 
     this_eq->a = best_a;
     this_eq->b = best_b;
