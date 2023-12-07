@@ -16,7 +16,6 @@ typedef	struct {
     double    c;
 } LineEquation;
 
-
 double get_y(double x, LineEquation this_eq);
 double dist_from_line(double x, double y, double a, double b, double c);
 void linear_model_ransac(int* data, int size, int max_iter, double thresh, double min_inlier_perc, LineEquation* this_eq);
@@ -28,3 +27,7 @@ void find_peaks(int* peak_freq, fftw_complex* out, int* subband_limits, int num_
 
 std::unordered_map<std::size_t, int> computeOrigFingerprint(AudioFile<double> audioFile, int sampling_rate, int wind_size, int overlap, fftw_complex* in, fftw_complex* out, fftw_plan plan, int* subband_limits, int num_bands);
 void computeQueryFingerprint(AudioFile<double> audioFile, int sampling_rate, int wind_size, int overlap, fftw_complex* in, fftw_complex* out, fftw_plan plan, int* subband_limits, int num_bands, size_t* result);
+
+void createAllOriginalAudioFingerprints(int num_fp);
+void decodeOrigFingerprints(int num_fp, std::unordered_map<std::size_t, int> * original_fingerprints);
+void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>* original_fingerprints, int* final_video_prediction, double* final_second_prediction);
