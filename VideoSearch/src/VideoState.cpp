@@ -155,10 +155,10 @@ int synchronize_audio(VideoState* state, short* samples, int samples_size, doubl
 		double diff, avg_diff;
 		int wanted_size, min_size, max_size; // # of samples.
 		ref_clock = get_master_clock(state);
-		printf("Master clock time sync audio thread: %f\n", ref_clock);
+		//printf("Master clock time sync audio thread: %f\n", ref_clock);
 		diff = get_audio_clock(state) - ref_clock;
 
-		printf("Audio clock: %f\n", get_audio_clock(state));
+		//printf("Audio clock: %f\n", get_audio_clock(state));
 		//printf("Diff: %f\n", diff);
 
 
@@ -234,7 +234,10 @@ int audio_decode_frame(VideoState* state, double* pts_ptr)
 	{
 		while (state->audioPacketSize > 0)
 		{
-
+			if (state->reset)
+			{
+				return 0;
+			}
 			ret = avcodec_send_packet(state->audioCtx, pkt);
 			len1 = pkt->size;
 			if (ret < 0 || len1 < 0)
@@ -353,6 +356,10 @@ void audio_callback(void* userdata, Uint8* stream, int len)
 
 	while (len > 0 )
 	{
+		if (state->reset)
+		{
+			return;
+		}
 		if (!state->pause)
 		{
 			if (state->audioBuffIndex >= state->audioBuffSize)
@@ -419,12 +426,27 @@ void display_controls(VideoState* state)
 	ImGui::SameLine();
 	if (ImGui::Button("Reset"))
 	{
+		state->reset = true;
 		printf("\nRESET\n");
-		state->videoCurrPtsTime = av_gettime();
 		SDL_Event event;
+		strncpy_s(state->nextQuery, 1024, state->filename, 1024);
 		event.type = FF_RESET_STREAM_EVENT;
 		SDL_PushEvent(&event);
-		state->pauseDuration = 0;
+		
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Next Query"))
+	{
+		state->getNextQuery = true;
+		nfdchar_t* outPath = NULL;
+		nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
+		strncpy_s(state->nextQuery, 1024, outPath, 1024);
+		state->reset = true;
+		SDL_Event event1;
+		event1.type = FF_RESET_STREAM_EVENT;
+		SDL_PushEvent(&event1);
+
 	}
 
 	ImGui::End();
@@ -705,7 +727,7 @@ double synchronize_video(VideoState* state, AVFrame* srcFrame, double pts) {
 	/* if we are repeating a frame, adjust clock accordingly */
 	frame_delay += srcFrame->repeat_pict * (frame_delay * 0.5);
 	state->videoClock += frame_delay;
-	printf("Video Clock sync video: %f\n", state->videoClock);
+	//printf("Video Clock sync video: %f\n", state->videoClock);
 	return pts;
 }
 
@@ -730,6 +752,12 @@ int video_thread(void* arg)
 	for (;;)
 	{
 		//std::printf("We are currently in the video thread, getting packets from the queue.\n");
+		if (state->reset)
+		{
+			av_frame_unref(pFrame);
+			delete[] errBuff;
+			return 0;
+		}
 		if (!state->pause)
 		{
 			if (packet_queue_get(&state->videoQ, packet, 1) < 0)
@@ -943,12 +971,16 @@ int decode_thread(void* arg)
 	int errCode;
 	int vidLoc = -1;
 	int audioLoc = -1;
+	int ret;
+	int len;
+	bool frameFound = false;
 
 	state->videoStreamLoc = -1;
 	state->audioStreamLoc = -1;
 	state->pause = false;
 	AVDictionary* io_dict = NULL;
 	AVIOInterruptCB callback;
+	AVFrame* testFrame = av_frame_alloc();
 
 	global_video_state = state;
 
@@ -1030,7 +1062,7 @@ int decode_thread(void* arg)
 	// Its just a loop that reads in packets and puts them into the right queue
 	for (;;)
 	{
-		if (state->quit)
+		if (state->quit || state->reset)
 		{
 			break;
 		}
@@ -1039,54 +1071,59 @@ int decode_thread(void* arg)
 			if (state->seek_req)
 			{
 				int stream_index = -1;
-				int stream_index_2 = -1;
-				int64_t seek_target_vid = state->seek_pos;
-				int64_t seek_target_audio = state->seek_pos;
+				int64_t seek_target = state->seek_pos;
 
 				if (state->videoStreamLoc >= 0)
 				{
 					stream_index = state->videoStreamLoc;
 				}
-				if (state->audioStreamLoc >= 0)
+				else if (state->audioStreamLoc >= 0)
 				{
-					stream_index_2 = state->audioStreamLoc;
+					stream_index = state->audioStreamLoc;
 				}
 
 				if (stream_index >= 0)
 				{
-					seek_target_vid = av_rescale_q(seek_target_vid, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index]->time_base);
+					seek_target = av_rescale_q(seek_target, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index]->time_base);
 				}
-				if (stream_index_2 >= 0)
+				errCode = av_seek_frame(pFormatCtx, stream_index, seek_target, state->seek_flags);
+				while (av_read_frame(state->pFormatCtx, packet) >= 0)
 				{
-					seek_target_audio = av_rescale_q(seek_target_audio, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index_2]->time_base);
-				}
-				errCodeVid = av_seek_frame(pFormatCtx, stream_index, seek_target_vid, state->seek_flags);
-				errCodeAudio = av_seek_frame(pFormatCtx, stream_index_2, seek_target_audio, state->seek_flags);
-				if (errCodeVid < 0)
-				{
-					std::printf("Error while seeking Video.\n");
-					av_strerror(errCodeVid, errBuff, errBuffSize);
-					//std::printf("%s DECODE THREAD SEEKING LOOP\n", errBuff);
-				}
-				else if (errCodeAudio < 0)
-				{
-					std::printf("Error while seeking Audio.\n");
-					av_strerror(errCodeAudio, errBuff, errBuffSize);
-					//std::printf("%s DECODE THREAD SEEKING LOOP\n", errBuff);
-				}
-				else
-				{
-					if (state->audioStreamLoc >= 0)
+					//printf("Time while reading frames %f\n", state->audioClock);
+					if (packet->stream_index == state->videoStreamLoc)
 					{
-						packet_queue_flush(&state->audioQ);
-						packet_queue_put(&state->audioQ, &flush_pkt);
+
+						ret = avcodec_send_packet(state->videoCtx, packet);
+						len = packet->size;
+						if (ret < 0 || len < 0)
+						{
+							fprintf(stderr, "Error during sending packet - exiting\n");
+							state->audioPacketSize = 0;
+							break;
+						}
+						while (ret >= 0)
+						{
+							ret = avcodec_receive_frame(state->videoCtx, testFrame);
+							if (testFrame->best_effort_timestamp >= seek_target)
+							{
+								frameFound = true;
+							}
+						}
+						if (frameFound)
+						{
+							frameFound = false;
+							break;
+						}
+
 					}
-					if (state->videoStreamLoc >= 0)
-					{
-						packet_queue_flush(&state->videoQ);
-						packet_queue_put(&state->videoQ, &flush_pkt);
-					}
+					av_packet_unref(packet);
 				}
+				if (errCode < 0)
+				{
+					std::printf("Error while seeking.\n");
+					av_strerror(errCode, errBuff, errBuffSize);
+				}
+
 
 				state->seek_req = false;
 			}
@@ -1133,6 +1170,10 @@ int decode_thread(void* arg)
 	// This code in particular is to have the code wait for either the program to end, or informing it that weve ended
 	while (!state->quit)
 	{
+		if (state->reset)
+		{
+			return 0;
+		}
 		SDL_Delay(100);
 	}
 
@@ -1159,9 +1200,4 @@ void stream_seek(VideoState* state, int64_t pos, int rel)
 		state->seek_flags = rel < 0 ? AVSEEK_FLAG_BACKWARD : 0;
 		state->seek_req = true;
 	}
-}
-
-void set_pause(VideoState* state)
-{
-	state->pause = !state->pause;
 }

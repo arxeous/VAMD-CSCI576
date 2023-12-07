@@ -1,9 +1,42 @@
 #include "VideoState.h"
+#include <fftw3.h>
+#include "AudioFile.h"
+#include "AudioFP.h"
+#include <iostream>
+#include <string>
+#include <filesystem>
+
+#define CREATE_FINGERPRINTS 0
 
 int main(int argc, char* argv[])
-{
+{	
+	int final_video_prediction = 0;
+	double final_second_prediction = 0; //This should ultimately have the predicted start time in seconds
+	int num_fp = 20;
+
+	//////////////////// Fingerprint the original files. //////////////////// 
+	if (CREATE_FINGERPRINTS) {
+		createAllOriginalAudioFingerprints(num_fp);
+	}
+
+	//////////////////// Decode fingerprints //////////////////// 
+	std::unordered_map<std::size_t, int> original_fingerprints[20]; //Where all the fingerprints of original files will be stored
+	decodeOrigFingerprints(num_fp, original_fingerprints);
+
+	//////////////////// Do Shazam ////////////////////
+	/*
+	Will return a value to:
+	  - final_video_prediction 
+	  - final_second_prediction
+	*/
+	std::string query = argv[2];
+	shazam(query, num_fp, original_fingerprints, &final_video_prediction, &final_second_prediction);
+		
+
 	SDL_Event event;
 	VideoState* video;
+	char newFile[1024];
+	bool nextQuery = false;
 	av_init_packet(&flush_pkt);
 	flush_pkt.opaque = "FLUSH";
 		
@@ -15,10 +48,18 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	strncpy_s(video->filename, argv[1], sizeof(video->filename));
+	std::string mp4_dir = "orig_mp4/";
+	std::string mp4_a = "video";
+	std::string mp4_b = ".mp4";
+	std::string play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
+
+	strncpy_s(video->filename, play_this.c_str(), sizeof(video->filename));
 	video->pictQMutex = SDL_CreateMutex();
 	video->pictQCond = SDL_CreateCond();
 	video->avSyncType = DEFAULT_AV_SYNC_TYPE;
+	video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
+	video->seek_req = true;
+	video->seek_flags = AVSEEK_FLAG_BACKWARD;
 
 	schedule_refresh(video, 40);
 	// Spawns a thread that starts running on the function we pass it along with user defined data
@@ -32,7 +73,8 @@ int main(int argc, char* argv[])
 	for (;;)
 	{
 		double increment, pos;
-		SDL_WaitEvent(&event);
+		int result;
+		result = SDL_WaitEvent(&event);
 		if (renderer)
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
@@ -65,7 +107,7 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "SDL: Could not create renderer - exiting\n");
 				exit(1);
 			}
-			else
+			else if(ImGui::GetCurrentContext() == NULL)
 			{
 				IMGUI_CHECKVERSION();
 				ImGui::CreateContext();
@@ -83,36 +125,49 @@ int main(int argc, char* argv[])
 			break;
 		// Key stroke catch
 		case FF_RESET_STREAM_EVENT:
-			stream_seek(global_video_state, 0, -1);
-			break;
-		case SDL_KEYDOWN:
-			switch (event.key.keysym.sym) 
+			// Clean up
+			nextQuery = video->getNextQuery;
+			query = video->nextQuery;
+			SDL_WaitThread(video->parseThreadId, NULL);
+			SDL_PauseAudioDevice(video->dev, 1);
+			SDL_CloseAudioDevice(video->dev);
+			avformat_close_input(&video->pFormatCtx);
+			av_free(video);
+			ImGui_ImplSDLRenderer2_Shutdown();
+			ImGui_ImplSDL2_Shutdown();
+			ImGui::DestroyContext();
+			SDL_DestroyRenderer(renderer);
+			renderer = NULL;
+			SDL_DestroyWindow(screen);
+			screen = NULL;
+			
+			//Re initialization of video
+			video = (VideoState*)av_mallocz(sizeof(VideoState));
+			if (nextQuery)
 			{
-			case SDLK_LEFT:
-				increment = -1.0;
-				goto do_seek;
-			case SDLK_RIGHT:
-				increment = 1.0;
-				goto do_seek;
-			case SDLK_UP:
-				increment = 5.0;
-				goto do_seek;
-			case SDLK_DOWN:
-				increment = -5.0;
-				goto do_seek;
-			do_seek:
-				if (global_video_state)
-				{
-					pos = get_master_clock(global_video_state);
-					pos += increment;
-					stream_seek(global_video_state, (int64_t)(pos * AV_TIME_BASE), increment);
-				}
-				break;
-			case SDLK_SPACE:
-				std::printf("\nPAUSE\n");
-				set_pause(global_video_state);
-				break;
+				std::filesystem::path pathObj(query);
+				query = pathObj.filename().string();
+				shazam(query, num_fp, original_fingerprints, &final_video_prediction, &final_second_prediction);
+				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
+				video->seek_req = true;
+				video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
+				video->getNextQuery = nextQuery = false;
 			}
+			strncpy_s(video->filename, play_this.c_str(), sizeof(video->filename));
+			video->pictQMutex = SDL_CreateMutex();
+			video->pictQCond = SDL_CreateCond();
+			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
+			video->videoStream = NULL;
+			schedule_refresh(video, 40);
+			global_video_state = video;
+
+			// Clearing out event buffer for previous video.
+			SDL_Event event3;
+			while (SDL_PollEvent(&event3)) {
+				// Discard the event
+			}
+			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
+			break;
 		default:
 			break;
 		}

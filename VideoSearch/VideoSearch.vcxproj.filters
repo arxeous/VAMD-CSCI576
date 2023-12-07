@@ -10,6 +10,9 @@
     <Filter Include="vendor\ImGui">
       <UniqueIdentifier>{1DA38CEE-0906-1C93-B28B-54499ECDE715}</UniqueIdentifier>
     </Filter>
+    <Filter Include="vendor\nativefiledialog">
+      <UniqueIdentifier>{9985D305-05BD-1B9D-0EC7-7FC07A7D4296}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VideoState.h">
@@ -67,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="vendor\ImGui\imgui_widgets.cpp">
       <Filter>vendor\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\nativefiledialog\nfd_win.cpp">
+      <Filter>vendor\nativefiledialog</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
