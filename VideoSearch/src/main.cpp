@@ -4,6 +4,7 @@
 #include "AudioFP.h"
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 #define CREATE_FINGERPRINTS 0
 
@@ -35,6 +36,7 @@ int main(int argc, char* argv[])
 	SDL_Event event;
 	VideoState* video;
 	char newFile[1024];
+	bool nextQuery = false;
 	av_init_packet(&flush_pkt);
 	flush_pkt.opaque = "FLUSH";
 		
@@ -124,7 +126,8 @@ int main(int argc, char* argv[])
 		// Key stroke catch
 		case FF_RESET_STREAM_EVENT:
 			// Clean up
-			strncpy_s(newFile, 1024, video->nextQuery, 1024);
+			nextQuery = video->getNextQuery;
+			query = video->nextQuery;
 			SDL_WaitThread(video->parseThreadId, NULL);
 			SDL_PauseAudioDevice(video->dev, 1);
 			SDL_CloseAudioDevice(video->dev);
@@ -137,10 +140,20 @@ int main(int argc, char* argv[])
 			renderer = NULL;
 			SDL_DestroyWindow(screen);
 			screen = NULL;
-
+			
 			//Re initialization of video
 			video = (VideoState*)av_mallocz(sizeof(VideoState));
-			strncpy_s(video->filename, newFile, sizeof(video->filename));
+			if (nextQuery)
+			{
+				std::filesystem::path pathObj(query);
+				query = pathObj.filename().string();
+				shazam(query, num_fp, original_fingerprints, &final_video_prediction, &final_second_prediction);
+				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
+				video->seek_req = true;
+				video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
+				video->getNextQuery = nextQuery = false;
+			}
+			strncpy_s(video->filename, play_this.c_str(), sizeof(video->filename));
 			video->pictQMutex = SDL_CreateMutex();
 			video->pictQCond = SDL_CreateCond();
 			video->avSyncType = DEFAULT_AV_SYNC_TYPE;

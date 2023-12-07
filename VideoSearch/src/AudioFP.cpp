@@ -16,10 +16,10 @@ double dist_from_line(double x, double y, double a, double b, double c) {
 }
 void linear_model_ransac(int* data, int size, int max_iter, double thresh, double min_inlier_perc, LineEquation* this_eq) {
     /*
-    data ñ A set of observations.
+    data ÅEA set of observations.
     size - the size of the data
-    max_iter ñ The maximum number of iterations allowed in the algorithm.
-    thresh ñ A threshold value to determine data points that are fit well by the model (inlier).
+    max_iter ÅEThe maximum number of iterations allowed in the algorithm.
+    thresh ÅEA threshold value to determine data points that are fit well by the model (inlier).
     */
 
     //Randomize the seed

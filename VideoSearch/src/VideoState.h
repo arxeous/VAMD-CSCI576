@@ -131,6 +131,7 @@ typedef struct VideoState {
 	bool                quit;
 	bool				pause;
 	bool				reset;
+	bool				getNextQuery;
 } VideoState;
 
 extern VideoState* global_video_state;
