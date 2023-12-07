@@ -438,10 +438,11 @@ void display_controls(VideoState* state)
 	ImGui::SameLine();
 	if (ImGui::Button("Next Query"))
 	{
-		printf("\Next Query\n");
+		state->getNextQuery = true;
 		nfdchar_t* outPath = NULL;
 		nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
 		strncpy_s(state->nextQuery, 1024, outPath, 1024);
+		state->reset = true;
 		SDL_Event event1;
 		event1.type = FF_RESET_STREAM_EVENT;
 		SDL_PushEvent(&event1);
