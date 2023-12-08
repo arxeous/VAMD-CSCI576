@@ -202,7 +202,6 @@ int main(int argc, char* argv[])
 			}
 
 			break;
-		// Key stroke catch
 		case FF_RESET_STREAM_EVENT:
 			// Clean up
 			nextQuery = video->getNextQuery;
@@ -220,13 +219,13 @@ int main(int argc, char* argv[])
 			renderer = NULL;
 			SDL_DestroyWindow(screen);
 			screen = NULL;
-			
 			//Re initialization of video
 			video = (VideoState*)av_mallocz(sizeof(VideoState));
 			if (nextQuery)
 			{
 				std::filesystem::path pathObj(query_audio);
-				query_audio = pathObj.filename().string();
+				query_audio = pathObj.filename().replace_extension(".wav").string();
+				query_video = pathObj.filename().replace_extension(".mp4").string();
 
 				output = startFrame(query_video, query_audio, original_fingerprints, myDict);
 				//output = startFrame(query_video, query_audio, original_fingerprints);
@@ -244,7 +243,6 @@ int main(int argc, char* argv[])
 			video->pictQCond = SDL_CreateCond();
 			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
 			video->videoStream = NULL;
-			schedule_refresh(video, 40);
 			global_video_state = video;
 
 			// Clearing out event buffer for previous video.

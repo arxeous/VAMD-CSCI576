@@ -664,7 +664,7 @@ int queue_picture(VideoState* state, AVFrame* pFrame, double pts)
 		SDL_LockMutex(state->pictQMutex);
 		while (!vw->allocated && !state->quit)
 		{
-			printf("waiting for condition signal for texture intialization/resize\n");
+			//printf("waiting for condition signal for texture intialization/resize\n");
 			SDL_CondWait(state->pictQCond, state->pictQMutex);
 		}
 		SDL_UnlockMutex(state->pictQMutex);
@@ -1021,7 +1021,7 @@ int decode_thread(void* arg)
 	}
 
 	// This is just a debug fcn that will print out info about the video we loaded.
-	av_dump_format(pFormatCtx, 0, state->filename, 0);
+	//av_dump_format(pFormatCtx, 0, state->filename, 0);
 
 
 	for (int i = 0; i < pFormatCtx->nb_streams; i++)
