@@ -30,4 +30,4 @@ void computeQueryFingerprint(AudioFile<double> audioFile, int sampling_rate, int
 
 void createAllOriginalAudioFingerprints(int num_fp);
 void decodeOrigFingerprints(int num_fp, std::unordered_map<std::size_t, int> * original_fingerprints);
-void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>* original_fingerprints, int* final_video_prediction, double* final_second_prediction);
+void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>* original_fingerprints, int* final_video_prediction, double* final_second_prediction, int* final_frame_prediction);

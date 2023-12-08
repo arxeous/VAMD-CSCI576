@@ -2,37 +2,106 @@
 #include <fftw3.h>
 #include "AudioFile.h"
 #include "AudioFP.h"
+#include "ShotBoundaries.h"
+#include "combine.h"
 #include <iostream>
 #include <string>
 #include <filesystem>
 
+#include "opencv2/opencv.hpp" 
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/videoio.hpp"
+
 #define CREATE_FINGERPRINTS 0
 
 int main(int argc, char* argv[])
-{	
-	int final_video_prediction = 0;
-	double final_second_prediction = 0; //This should ultimately have the predicted start time in seconds
+{
 	int num_fp = 20;
 
-	//////////////////// Fingerprint the original files. //////////////////// 
+	// Get audio fingerprints
 	if (CREATE_FINGERPRINTS) {
 		createAllOriginalAudioFingerprints(num_fp);
 	}
-
-	//////////////////// Decode fingerprints //////////////////// 
-	std::unordered_map<std::size_t, int> original_fingerprints[20]; //Where all the fingerprints of original files will be stored
+	std::unordered_map<std::size_t, int> original_fingerprints[20];
 	decodeOrigFingerprints(num_fp, original_fingerprints);
 
-	//////////////////// Do Shazam ////////////////////
-	/*
-	Will return a value to:
-	  - final_video_prediction 
-	  - final_second_prediction
-	*/
-	std::string query = argv[2];
-	shazam(query, num_fp, original_fingerprints, &final_video_prediction, &final_second_prediction);
-		
 
+	// Get shot boundary list
+	//std::string filename = "../shot_boundaries_maps.txt";
+	//std::ifstream file(filename);
+
+	std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap;
+
+	//if (!file.is_open()) {
+	//	// If the file doesn't exist, create and store the shot boundaries and differences
+	//	std::map<std::string, std::vector<int>> shots = makeShotBoundariesMap();
+
+	//	std::ofstream outfile(filename);
+	//	if (outfile.is_open()) {
+	//		for (const auto& entry : shots) {
+	//			// make differences array
+	//			std::vector<int> entryDifferences = calculateDifferences(entry.second);
+	//			shotBoundariesMap[entry.first] = std::make_pair(entry.second, entryDifferences);
+
+	//			outfile << entry.first << ": ";
+	//			for (int boundary : entry.second) {
+	//				outfile << boundary << " ";
+	//			}
+	//			outfile << "| ";
+	//			for (int diff : entryDifferences) {
+	//				outfile << diff << " ";
+	//			}
+	//			outfile << "\n";
+	//		}
+	//		outfile.close();
+	//	}
+	//	else {
+	//		std::cerr << "Unable to create file: " << filename << std::endl;
+	//		return -1;
+	//	}
+	//}
+	//else {
+	//	// Read shot boundaries maps from the file
+	//	std::string line;
+	//	while (std::getline(file, line)) {
+	//		std::string videoName = line.substr(0, line.find(":"));
+	//		line.erase(0, line.find(":") + 2);
+
+	//		std::istringstream iss(line);
+	//		std::vector<int> boundaries, differences;
+	//		int num;
+	//		bool readingBoundaries = true;
+	//		while (iss >> num) {
+	//			if (num == '|') {
+	//				readingBoundaries = false;
+	//				continue;
+	//			}
+	//			if (readingBoundaries) {
+	//				boundaries.push_back(num);
+	//			}
+	//			else {
+	//				differences.push_back(num);
+	//			}
+	//		}
+	//		shotBoundariesMap[videoName] = std::make_pair(boundaries, differences);
+	//	}
+	//	file.close();
+	//}
+
+	// Get frame prediction
+	std::string query_video = argv[1];
+	std::string query_audio = argv[2];
+	Result output = startFrame(query_video, query_audio, original_fingerprints, shotBoundariesMap);
+	int final_video_prediction = output.final_video_prediction;
+	int final_frame_prediction = output.final_frame_prediction;
+	double final_second_prediction = output.final_second_prediction;
+
+	std::cout << "Video prediction: " << final_video_prediction << std::endl;
+	std::cout << "Frame prediction: " << final_frame_prediction << std::endl;
+	std::cout << "Second prediction: " << final_second_prediction << std::endl;
+
+	/*
 	SDL_Event event;
 	VideoState* video;
 	char newFile[1024];
@@ -127,7 +196,8 @@ int main(int argc, char* argv[])
 		case FF_RESET_STREAM_EVENT:
 			// Clean up
 			nextQuery = video->getNextQuery;
-			query = video->nextQuery;
+			query_audio = video->nextQuery;
+			query_video = video->nextQuery;
 			SDL_WaitThread(video->parseThreadId, NULL);
 			SDL_PauseAudioDevice(video->dev, 1);
 			SDL_CloseAudioDevice(video->dev);
@@ -145,9 +215,14 @@ int main(int argc, char* argv[])
 			video = (VideoState*)av_mallocz(sizeof(VideoState));
 			if (nextQuery)
 			{
-				std::filesystem::path pathObj(query);
-				query = pathObj.filename().string();
-				shazam(query, num_fp, original_fingerprints, &final_video_prediction, &final_second_prediction);
+				std::filesystem::path pathObj(query_audio);
+				query_audio = pathObj.filename().string();
+
+				output = startFrame(query_video, query_audio, original_fingerprints);
+				final_video_prediction = output.final_video_prediction;
+				final_frame_prediction = output.final_frame_prediction;
+				final_second_prediction = output.final_second_prediction;
+
 				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
 				video->seek_req = true;
 				video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
@@ -183,6 +258,6 @@ int main(int argc, char* argv[])
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(screen);
 	SDL_Quit();
+	*/
 	return 0;
-	
 }

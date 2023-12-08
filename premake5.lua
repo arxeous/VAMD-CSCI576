@@ -33,12 +33,14 @@ project "VideoSearch"
 		"%{prj.name}/vendor/ffmpeg/include",
 		"%{prj.name}/vendor/SDL2/include",
 		"%{prj.name}/vendor/ImGui",
+		"%{prj.name}/vendor/opencv2",
+		"%{prj.name}/vendor/Eigen",
 		"%{prj.name}/vendor/fftw3/include",
 		"%{prj.name}/vendor/AudioFile",
 		"%{prj.name}/vendor/nativefiledialog/include"
 	}
 
-	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib", "%{prj.name}/vendor/nativefiledialog/lib" }
+	libdirs {"%{prj.name}/vendor/SDL2/lib", "%{prj.name}/vendor/ffmpeg/lib", "%{prj.name}/vendor/fftw3/lib", "%{prj.name}/vendor/nativefiledialog/lib", "%{prj.name}/vendor/opencv2/opencv2/x64/vc16/lib" }
 
 
 	links
@@ -55,7 +57,8 @@ project "VideoSearch"
 		"swscale",
 		"libfftw3-3",
 		"nfd_d",
-		"comctl32"
+		"comctl32",
+		"opencv_world480d"
 	}
 
 	filter "configurations:Debug"
@@ -73,5 +76,6 @@ project "VideoSearch"
 		{
 			"xcopy /Q /Y /I %{prj.location}\\vendor\\ffmpeg\\lib\\*.dll %{cfg.buildtarget.directory}",
 			"xcopy /Q /Y /I %{prj.location}\\vendor\\SDL2\\lib\\*.dll %{cfg.buildtarget.directory}",
-			"xcopy /Q /Y /I %{prj.location}\\vendor\\fftw3\\lib\\*.dll %{cfg.buildtarget.directory}"
+			"xcopy /Q /Y /I %{prj.location}\\vendor\\fftw3\\lib\\*.dll %{cfg.buildtarget.directory}",
+			"xcopy /Q /Y /I %{prj.location}\\vendor\\opencv2\\opencv2\\x64\\vc16\\lib\\*.dll %{cfg.buildtarget.directory}"
 		}

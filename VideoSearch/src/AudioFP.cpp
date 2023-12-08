@@ -312,12 +312,11 @@ void decodeOrigFingerprints(int num_fp, std::unordered_map<std::size_t, int>* or
     printf("Fingerprints ready.\n");
 }
 
-void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>* original_fingerprints, int* final_video_prediction, double* final_second_prediction) {
+void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>* original_fingerprints, int* final_video_prediction, double* final_second_prediction, int* final_frame_prediction) {
     int pred_milli; //Returns the millisecond at which Shazam predicts the start to be. Will be -1 if no good result found.
     int pred_frame; //Simple conversion from milli to frame
     AudioFile<double> queryFile;
     printf("\nLoading Query File %s...\n", query.c_str());
-    auto start_clock = std::chrono::high_resolution_clock::now();
     queryFile.load("query_wav/" + query);
     //queryFile.printSummary();
 
@@ -376,18 +375,17 @@ void shazam(std::string query, int num_fp, std::unordered_map<std::size_t, int>*
 
     LineEquation best_line;
     linear_model_ransac(best_results, num_windows, 100, 7, 0.6, &best_line);
-    auto stop_clock = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
-    printf("\nSearch time in millisecs: %d\n", duration.count());
+    
 
     pred_milli = static_cast<int>(get_y(0, best_line));
     if (pred_milli >= 0) {
         pred_frame = static_cast<int>(floor(pred_milli * .03));
-        printf("SHAZAM:\n");
+        /*printf("SHAZAM:\n");
         printf("Predicted video: %d\n", best_map);
         printf("Predicted beginning in milli: %d\n", pred_milli);
-        printf("Predicted beginning frame: %d\n\n", pred_frame);
+        printf("Predicted beginning frame: %d\n\n", pred_frame);*/
         *final_second_prediction = pred_milli / 1000.0;
+        *final_frame_prediction = pred_frame;
         *final_video_prediction = best_map;
     }
     else {

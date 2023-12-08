@@ -7,6 +7,9 @@
     <Filter Include="vendor">
       <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
     </Filter>
+    <Filter Include="vendor\AudioFile">
+      <UniqueIdentifier>{74C54D37-60BE-6C89-89F0-510E75484C95}</UniqueIdentifier>
+    </Filter>
     <Filter Include="vendor\ImGui">
       <UniqueIdentifier>{1DA38CEE-0906-1C93-B28B-54499ECDE715}</UniqueIdentifier>
     </Filter>
@@ -15,8 +18,23 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AudioFP.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ShotBoundaries.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TestColor.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="src\VideoState.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\combine.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\AudioFile\AudioFile.h">
+      <Filter>vendor\AudioFile</Filter>
     </ClInclude>
     <ClInclude Include="vendor\ImGui\imconfig.h">
       <Filter>vendor\ImGui</Filter>
@@ -44,7 +62,19 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AudioFP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShotBoundaries.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TestColor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\VideoState.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\combine.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
@@ -74,5 +104,8 @@
     <ClCompile Include="vendor\nativefiledialog\nfd_win.cpp">
       <Filter>vendor\nativefiledialog</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="colorDatabase100x100.txt" />
   </ItemGroup>
 </Project>
