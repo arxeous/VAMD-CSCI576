@@ -44,7 +44,7 @@ void linear_model_ransac(int* data, int size, int max_iter, double thresh, doubl
     }
 
     //Minimum number of matches required to be valid
-    if (num_nonzero >= 5) {
+    if (num_nonzero >= size/2) {
         int min_inliers = static_cast<int>(floor(min_inlier_perc * num_nonzero));
 
         //Perform RANSAC
