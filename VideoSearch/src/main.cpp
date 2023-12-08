@@ -245,11 +245,6 @@ int main(int argc, char* argv[])
 			video->videoStream = NULL;
 			global_video_state = video;
 
-			// Clearing out event buffer for previous video.
-			SDL_Event event3;
-			while (SDL_PollEvent(&event3)) {
-				// Discard the event
-			}
 			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
 			break;
 		default:
