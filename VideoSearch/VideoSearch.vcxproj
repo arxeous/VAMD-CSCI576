@@ -136,9 +136,6 @@ xcopy /Q /Y /I $(ProjectDir)\vendor\opencv2\opencv2\x64\vc16\lib\*.dll $(TargetD
     <ClCompile Include="vendor\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="vendor\nativefiledialog\nfd_win.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="colorDatabase100x100.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

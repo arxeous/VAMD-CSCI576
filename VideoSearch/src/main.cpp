@@ -28,71 +28,81 @@ int main(int argc, char* argv[])
 
 
 	// Get shot boundary list
-	//std::string filename = "../shot_boundaries_maps.txt";
-	//std::ifstream file(filename);
+	std::string filename = "shot_boundaries_maps.txt";
+	std::ifstream file(filename);
 
 	std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap;
 
-	//if (!file.is_open()) {
-	//	// If the file doesn't exist, create and store the shot boundaries and differences
-	//	std::map<std::string, std::vector<int>> shots = makeShotBoundariesMap();
+	if (file.is_open()) {
+		// Read shot boundaries maps from the file
+		std::cout << "Decoding shot boundary file..." << std::endl;
+		std::string line;
+		while (std::getline(file, line)) {
+			std::string videoName = line.substr(0, line.find(":"));
+			line.erase(0, line.find(":") + 2);
+			std::istringstream iss(line);
+			std::vector<int> boundaries, differences;
+			int num;
+			bool readingBoundaries = true;
+			while (iss >> num) {
+				if (num == '|') {
+					readingBoundaries = false;
+					continue;
+				}
+				if (readingBoundaries) {
+					boundaries.push_back(num);
+				}
+				else {
+					differences.push_back(num);
+				}
+			}
+			shotBoundariesMap[videoName] = std::make_pair(boundaries, differences);
+		}
+		file.close();
+	}
+	else {
+		std::cout << "Unable to locate shot boundary file" << std::endl;
+	}
 
-	//	std::ofstream outfile(filename);
-	//	if (outfile.is_open()) {
-	//		for (const auto& entry : shots) {
-	//			// make differences array
-	//			std::vector<int> entryDifferences = calculateDifferences(entry.second);
-	//			shotBoundariesMap[entry.first] = std::make_pair(entry.second, entryDifferences);
+	// Get color map
+	std::ifstream inFile("colorDatabase100x100.txt");
+	// create an unordered_map with string keys and vector of Eigen::Vector3f values
+	std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict;
 
-	//			outfile << entry.first << ": ";
-	//			for (int boundary : entry.second) {
-	//				outfile << boundary << " ";
-	//			}
-	//			outfile << "| ";
-	//			for (int diff : entryDifferences) {
-	//				outfile << diff << " ";
-	//			}
-	//			outfile << "\n";
-	//		}
-	//		outfile.close();
-	//	}
-	//	else {
-	//		std::cerr << "Unable to create file: " << filename << std::endl;
-	//		return -1;
-	//	}
-	//}
-	//else {
-	//	// Read shot boundaries maps from the file
-	//	std::string line;
-	//	while (std::getline(file, line)) {
-	//		std::string videoName = line.substr(0, line.find(":"));
-	//		line.erase(0, line.find(":") + 2);
+	if (inFile.is_open()) {
+		std::cout << "Decoding color map file...\n";
+		// read each line from the file
+		std::string line;
 
-	//		std::istringstream iss(line);
-	//		std::vector<int> boundaries, differences;
-	//		int num;
-	//		bool readingBoundaries = true;
-	//		while (iss >> num) {
-	//			if (num == '|') {
-	//				readingBoundaries = false;
-	//				continue;
-	//			}
-	//			if (readingBoundaries) {
-	//				boundaries.push_back(num);
-	//			}
-	//			else {
-	//				differences.push_back(num);
-	//			}
-	//		}
-	//		shotBoundariesMap[videoName] = std::make_pair(boundaries, differences);
-	//	}
-	//	file.close();
-	//}
+		while (std::getline(inFile, line)) {
+			//std::cout << line << std::endl;
+			// parse the line
+			std::istringstream iss(line);
+			std::string key;
+			float x, y, z;
+
+			// read the key
+			iss >> key;
+
+			// create a vector to store Eigen::Vector3f components
+			std::vector<Eigen::Vector3f> vectorComponents;
+
+			// read the vector components
+			while (iss >> x >> y >> z) {
+				vectorComponents.push_back(Eigen::Vector3f(x, y, z));
+			}
+			myDict[key] = vectorComponents;
+		}
+		inFile.close();
+	}
+	else {
+		std::cout << "Unable to locate color map file\n";
+	}
 
 	// Get frame prediction
 	std::string query_video = argv[1];
 	std::string query_audio = argv[2];
-	Result output = startFrame(query_video, query_audio, original_fingerprints, shotBoundariesMap);
+	Result output = startFrame(query_video, query_audio, original_fingerprints, shotBoundariesMap, myDict);
 	int final_video_prediction = output.final_video_prediction;
 	int final_frame_prediction = output.final_frame_prediction;
 	double final_second_prediction = output.final_second_prediction;

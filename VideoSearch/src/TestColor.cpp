@@ -1,15 +1,15 @@
 #include "TestColor.h"
 
 
-void showColor(const Eigen::Vector3f& rgbValues) {
-    // Create a single-pixel image with the specified color
-    cv::Mat colorImage(1, 1, CV_8UC3);
-    colorImage.at<cv::Vec3b>(0, 0) = cv::Vec3b(rgbValues[0], rgbValues[1], rgbValues[2]);
-
-    // Display the color image
-    cv::imshow("Color Image", colorImage);
-    cv::waitKey(0);
-}
+//void showColor(const Eigen::Vector3f& rgbValues) {
+//    // Create a single-pixel image with the specified color
+//    cv::Mat colorImage(1, 1, CV_8UC3);
+//    colorImage.at<cv::Vec3b>(0, 0) = cv::Vec3b(rgbValues[0], rgbValues[1], rgbValues[2]);
+//
+//    // Display the color image
+//    cv::imshow("Color Image", colorImage);
+//    cv::waitKey(0);
+//}
 
 
 bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::vector<Eigen::Vector3f>& v2, float threshold, std::size_t& matchIndex) 
@@ -55,7 +55,7 @@ std::pair<std::string, std::size_t> findSubarrayThreshold(const std::unordered_m
 }
 
 
-std::pair<int, int> searchForQuery(const std::string& videoPath)
+std::pair<int, int> searchForQuery(const std::string& videoPath, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict)
 {
     // open vid
     cv::VideoCapture vid; 
@@ -98,67 +98,22 @@ std::pair<int, int> searchForQuery(const std::string& videoPath)
 
 	vid.release();
 
-	//std::cout << "TESTING" << std::endl;
-    //std::cout << "Average Color for Frame 0: " << std::fixed << std::setprecision(6) << averageColors[0].transpose() << std::endl;
-    //std::cout << "Average Color for Frame 0: " << averageColors[0].transpose() << std::endl;
-    //std::cout << "Average Color for Frame 1: " << averageColors[1].transpose() << std::endl;
-    //std::cout << "Average Color for Frame 2: " << averageColors[2].transpose() << std::endl;
-    //std::cout << "Average Color for Frame 3: " << averageColors[3].transpose() << std::endl;
+	/*std::cout << "TESTING" << std::endl;
+    std::cout << "Average Color for Frame 0: " << std::fixed << std::setprecision(6) << averageColors[0].transpose() << std::endl;
+    std::cout << "Average Color for Frame 0: " << averageColors[0].transpose() << std::endl;
+    std::cout << "Average Color for Frame 1: " << averageColors[1].transpose() << std::endl;
+    std::cout << "Average Color for Frame 2: " << averageColors[2].transpose() << std::endl;
+    std::cout << "Average Color for Frame 3: " << averageColors[3].transpose() << std::endl;
 
-
-    // here read in the file and compare
-    //std::ifstream inFile("colorDatabase512x512.txt");
-    auto startClock1 = std::chrono::high_resolution_clock::now();
-    std::ifstream inFile("colorDatabase100x100.txt");
-    // create an unordered_map with string keys and vector of Eigen::Vector3f values
-    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict;
-
-    if (inFile.is_open()) {
-
-        // read each line from the file
-        std::string line;
-        while (std::getline(inFile, line)) {
-            // parse the line
-            std::istringstream iss(line);
-            std::string key;
-            float x, y, z;
-
-            // read the key
-            iss >> key;
-
-            // create a vector to store Eigen::Vector3f components
-            std::vector<Eigen::Vector3f> vectorComponents;
-
-            // read the vector components
-            while (iss >> x >> y >> z) {
-                vectorComponents.push_back(Eigen::Vector3f(x, y, z));
-            }
-            myDict[key] = vectorComponents;
-        }
-        inFile.close();
-    } 
-    else {
-        std::cerr << "Error opening file for reading.\n";
-        return {-1,-1};
-    }
-    auto stopClock1 = std::chrono::high_resolution_clock::now();
-	auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(stopClock1-startClock1);
-	printf("reading in dict %d microseconds\n", duration1.count());
-
-    //std::cout << myDict["video2.mp4"][8340] << std::endl;
-    //std::cout << myDict["video2.mp4"][8341] << std::endl;
-    //std::cout << myDict["video2.mp4"][8342] << std::endl;
-    //std::cout << myDict["video2.mp4"][8343] << std::endl;
+    std::cout << myDict["video2.mp4"][8340] << std::endl;
+    std::cout << myDict["video2.mp4"][8341] << std::endl;
+    std::cout << myDict["video2.mp4"][8342] << std::endl;
+    std::cout << myDict["video2.mp4"][8343] << std::endl;*/
 
     // call comparison funct
-    //auto startClock2 = std::chrono::high_resolution_clock::now();
-    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.05);
-    if(!test.first.empty()){
-        //std::cout << "====================RESULT===================" << std::endl;
-        //std::cout << test.first << " index @ " << test.second << std::endl;
-    }
-    else{
-        std::cout << "                NOTHING FOUND                " << std::endl;
+    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.5);
+    if(test.first.empty()){
+        //std::cout << "                NOTHING FOUND                " << std::endl;
         return std::make_pair(-1, -1);
     }
     /*auto stopClock2 = std::chrono::high_resolution_clock::now();
@@ -172,699 +127,699 @@ std::pair<int, int> searchForQuery(const std::string& videoPath)
     return std::make_pair(vidInt, test.second);
 }
 
-void preprocessVideos()
-{   
-    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict;
-    cv::VideoCapture vid; 
-    std::vector<Eigen::Vector3f> averageColors;
-
-    // VIDEO_1 DATABASE ======================================================================================= 
-	vid.open("video1.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-	vid.release();
-
-    myDict["video1.mp4"] = averageColors;
-    averageColors.clear();
-
-    // VIDEO_2 DATABASE ======================================================================================= 
-	vid.open("video2.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    std::cout << "Average Color for Frame 8340: " << averageColors[8340].transpose() << std::endl;
-    std::cout << "Average Color for Frame 8341: " << averageColors[8341].transpose() << std::endl;
-    std::cout << "Average Color for Frame 8342: " << averageColors[8342].transpose() << std::endl;
-
-    myDict["video2.mp4"] = averageColors;
-    averageColors.clear();
-
-    // VIDEO_3 DATABASE =======================================================================================
-	vid.open("video3.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    std::cout << "Average Color for Frame 13350: " << averageColors[13350].transpose() << std::endl;
-    std::cout << "Average Color for Frame 13351: " << averageColors[13351].transpose() << std::endl;
-    std::cout << "Average Color for Frame 13352: " << averageColors[13352].transpose() << std::endl;
-
-    myDict["video3.mp4"] = averageColors;
-    averageColors.clear();
-
-    // VIDEO_4 DATABASE =======================================================================================
-	vid.open("video4.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video4.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_5 DATABASE =======================================================================================
-	vid.open("video5.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video5.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_6 DATABASE =======================================================================================
-	vid.open("video6.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video6.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_7 DATABASE =======================================================================================
-	vid.open("video7.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video7.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_8 DATABASE =======================================================================================
-	vid.open("video8.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video8.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_9 DATABASE =======================================================================================
-	vid.open("video9.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video9.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_10 DATABASE =======================================================================================
-	vid.open("video10.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video10.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_11 DATABASE =======================================================================================
-	vid.open("video11.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video11.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_12 DATABASE =======================================================================================
-	vid.open("video12.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video12.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_13 DATABASE =======================================================================================
-	vid.open("video13.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video13.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_14 DATABASE =======================================================================================
-	vid.open("video14.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video14.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_15 DATABASE =======================================================================================
-	vid.open("video15.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video15.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_16 DATABASE =======================================================================================
-	vid.open("video16.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video16.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_17 DATABASE =======================================================================================
-	vid.open("video17.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video17.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_18 DATABASE =======================================================================================
-	vid.open("video18.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video18.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_19 DATABASE =======================================================================================
-	vid.open("video19.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video19.mp4"] = averageColors;
-    averageColors.clear();
-
-
-    // VIDEO_20 DATABASE =======================================================================================
-	vid.open("video20.mp4", cv::CAP_FFMPEG);
-    
-    if (!vid.isOpened()) {
-        std::cout << "ERROR NOTHING" << std::endl;
-	}
-
-    // Process whole video
-    while (true) {
-        cv::Mat frame;
-        vid >> frame;
-
-        if (frame.empty()) {
-            break;
-        }
-
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-        cv::resize(frame, frame, cv::Size(100, 100));
-
-		cv::Scalar meanColor = cv::mean(frame);
-		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
-		
-        averageColors.push_back(averageColor);
-
-	}
-
-
-	vid.release();
-
-    myDict["video20.mp4"] = averageColors;
-    averageColors.clear();
-
-    
-    // Write to file 
-    std::ofstream outFile("colorDatabase100x100.txt");
-
-    if (outFile.is_open()) {
-        // Iterate through the map
-        for (const auto& entry : myDict) {
-            // Write the key
-            outFile << entry.first << " ";
-
-            // Iterate through the vector of Eigen::Vector3f
-            for (const auto& vector : entry.second) {
-                // Write each Eigen::Vector3f
-                outFile << vector[0] << " " << vector[1] << " " << vector[2] << " ";
-            }
-
-            outFile << "\n";
-        }
-
-        // Close the file
-        outFile.close();
-
-        std::cout << "Map written to file successfully.\n";
-    } else {
-        std::cerr << "Error opening file for writing.\n";
-    }
-}
+//void preprocessVideos()
+//{   
+//    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict;
+//    cv::VideoCapture vid; 
+//    std::vector<Eigen::Vector3f> averageColors;
+//
+//    // VIDEO_1 DATABASE ======================================================================================= 
+//	vid.open("video1.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//	vid.release();
+//
+//    myDict["video1.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//    // VIDEO_2 DATABASE ======================================================================================= 
+//	vid.open("video2.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    std::cout << "Average Color for Frame 8340: " << averageColors[8340].transpose() << std::endl;
+//    std::cout << "Average Color for Frame 8341: " << averageColors[8341].transpose() << std::endl;
+//    std::cout << "Average Color for Frame 8342: " << averageColors[8342].transpose() << std::endl;
+//
+//    myDict["video2.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//    // VIDEO_3 DATABASE =======================================================================================
+//	vid.open("video3.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    std::cout << "Average Color for Frame 13350: " << averageColors[13350].transpose() << std::endl;
+//    std::cout << "Average Color for Frame 13351: " << averageColors[13351].transpose() << std::endl;
+//    std::cout << "Average Color for Frame 13352: " << averageColors[13352].transpose() << std::endl;
+//
+//    myDict["video3.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//    // VIDEO_4 DATABASE =======================================================================================
+//	vid.open("video4.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video4.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_5 DATABASE =======================================================================================
+//	vid.open("video5.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video5.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_6 DATABASE =======================================================================================
+//	vid.open("video6.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video6.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_7 DATABASE =======================================================================================
+//	vid.open("video7.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video7.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_8 DATABASE =======================================================================================
+//	vid.open("video8.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video8.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_9 DATABASE =======================================================================================
+//	vid.open("video9.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video9.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_10 DATABASE =======================================================================================
+//	vid.open("video10.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video10.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_11 DATABASE =======================================================================================
+//	vid.open("video11.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video11.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_12 DATABASE =======================================================================================
+//	vid.open("video12.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video12.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_13 DATABASE =======================================================================================
+//	vid.open("video13.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video13.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_14 DATABASE =======================================================================================
+//	vid.open("video14.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video14.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_15 DATABASE =======================================================================================
+//	vid.open("video15.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video15.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_16 DATABASE =======================================================================================
+//	vid.open("video16.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video16.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_17 DATABASE =======================================================================================
+//	vid.open("video17.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video17.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_18 DATABASE =======================================================================================
+//	vid.open("video18.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video18.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_19 DATABASE =======================================================================================
+//	vid.open("video19.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video19.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//
+//    // VIDEO_20 DATABASE =======================================================================================
+//	vid.open("video20.mp4", cv::CAP_FFMPEG);
+//    
+//    if (!vid.isOpened()) {
+//        std::cout << "ERROR NOTHING" << std::endl;
+//	}
+//
+//    // Process whole video
+//    while (true) {
+//        cv::Mat frame;
+//        vid >> frame;
+//
+//        if (frame.empty()) {
+//            break;
+//        }
+//
+//        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//        cv::resize(frame, frame, cv::Size(100, 100));
+//
+//		cv::Scalar meanColor = cv::mean(frame);
+//		Eigen::Vector3f averageColor(meanColor[0], meanColor[1], meanColor[2]);
+//		
+//        averageColors.push_back(averageColor);
+//
+//	}
+//
+//
+//	vid.release();
+//
+//    myDict["video20.mp4"] = averageColors;
+//    averageColors.clear();
+//
+//    
+//    // Write to file 
+//    std::ofstream outFile("colorDatabase100x100.txt");
+//
+//    if (outFile.is_open()) {
+//        // Iterate through the map
+//        for (const auto& entry : myDict) {
+//            // Write the key
+//            outFile << entry.first << " ";
+//
+//            // Iterate through the vector of Eigen::Vector3f
+//            for (const auto& vector : entry.second) {
+//                // Write each Eigen::Vector3f
+//                outFile << vector[0] << " " << vector[1] << " " << vector[2] << " ";
+//            }
+//
+//            outFile << "\n";
+//        }
+//
+//        // Close the file
+//        outFile.close();
+//
+//        std::cout << "Map written to file successfully.\n";
+//    } else {
+//        std::cerr << "Error opening file for writing.\n";
+//    }
+//}
