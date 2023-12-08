@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 			alloc_picture(event.user.data1);
 			break;
 		case FF_REFRESH_EVENT:
-			video_refresh_timer(event.user.data1);
+			video_refresh_timer((void*)global_video_state);
 			break;
 		case FF_CREATE_WINDOW_EVENT:
 			screen = SDL_CreateWindow(video->filename,
