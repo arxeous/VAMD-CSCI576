@@ -121,8 +121,13 @@ std::pair<int, int> searchForQuery(const std::string& videoPath, std::unordered_
 	printf("comparison takes %d microseconds\n", duration2.count());*/
 
     //std::cout << "length = " <<  myDict["video11.mp4"].size() << std::endl;
-    char sixthChar = test.first[5]; // Array notation, indexing starts from 0
-    int vidInt = sixthChar - '0';
+    //char sixthChar = test.first[5]; // Array notation, indexing starts from 0
+    //int vidInt = sixthChar - '0';
+    size_t startPos = test.first.find_first_of("0123456789");
+    std::string numberStr = test.first.substr(startPos);
+    std::istringstream iss(numberStr);
+    int vidInt;
+    iss >> vidInt;
 
     return std::make_pair(vidInt, test.second);
 }
