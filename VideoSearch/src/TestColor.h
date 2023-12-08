@@ -18,7 +18,7 @@
 #include "Dense"
 
 //void showAverageColor(const Eigen::Vector3f& rgbValues);
-bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::vector<Eigen::Vector3f>& v2, float threshold, std::size_t& matchIndex);
+bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::vector<Eigen::Vector3f>& v2, float threshold, float& minError, std::size_t& matchIndex);
 std::pair<std::string, std::size_t> findSubarrayThreshold(const std::unordered_map<std::string, std::vector<Eigen::Vector3f>>& videoMap, const std::vector<Eigen::Vector3f>& queryVector, float threshold);
 std::pair<int, int> searchForQuery(const std::string& videoPath, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict);
 //void preprocessVideos();

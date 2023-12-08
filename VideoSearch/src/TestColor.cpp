@@ -12,7 +12,7 @@
 //}
 
 
-bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::vector<Eigen::Vector3f>& v2, float threshold, std::size_t& matchIndex) 
+bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::vector<Eigen::Vector3f>& v2, float threshold, float& minError, std::size_t& matchIndex) 
 {
     // check if vid size is smaller than query
     if (v1.size() < v2.size()) {
@@ -22,7 +22,7 @@ bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::
     // iterate through & compare sub vec 
     // get absolute difference & check below the threshold
     // if match get index and return true
-    for (std::size_t i = 0; i <= v1.size() - v2.size(); ++i) {
+    /*for (std::size_t i = 0; i <= v1.size() - v2.size(); ++i) {
         bool match = true;
         for (std::size_t j = 0; j < v2.size(); ++j) {
             if ((v1[i + j] - v2[j]).norm() > threshold) {
@@ -36,22 +36,49 @@ bool compareVectorsThreshold(const std::vector<Eigen::Vector3f>& v1, const std::
         }
     }
 
-    return false;
+    return false;*/
+
+    for (std::size_t i = 0; i <= v1.size() - v2.size(); ++i) {
+        float error = 0.0;
+        for (std::size_t j = 0; j < v2.size(); ++j) {
+            error += (v1[i + j] - v2[j]).norm();
+        }
+
+        if (error <= minError) {
+            minError = error;
+            matchIndex = i;
+        }
+    }
+
+    //std::cout << "MINIMUM ERROR IS " << minError << std::endl;
+    return minError; //<= threshold;
 }
 
 
 std::pair<std::string, std::size_t> findSubarrayThreshold(const std::unordered_map<std::string, std::vector<Eigen::Vector3f>>& videoMap, const std::vector<Eigen::Vector3f>& queryVector, float threshold) 
 {
+    float overallMinError = std::numeric_limits<float>::max(); 
     std::size_t matchIndex = 0;
+    std::size_t overallMatchIndex = 0;
+    std::string bestMatch = "";
     // loop through all vids in database
     // compare query with each 
     for (const auto& entry : videoMap) {
         // Compare the query vector with each vid rhen return if exits or not
-        if (compareVectorsThreshold(entry.second, queryVector, threshold, matchIndex)) {
-            return {entry.first, matchIndex};
+        //std::cout << "video = " << entry.first << std::endl;
+        float minError = std::numeric_limits<float>::max();
+        compareVectorsThreshold(entry.second, queryVector, threshold, minError, matchIndex);
+        if(minError <= overallMinError) {
+            //std::cout << "BOOM got a low error threshold " << minError << std::endl;
+            overallMinError = minError;
+            overallMatchIndex = matchIndex;
+            bestMatch = entry.first;
+            if(overallMinError < 20){
+                return {bestMatch, overallMatchIndex};
+            }
         }
     }
-    return {"", 0};
+    return {bestMatch, overallMatchIndex};
 }
 
 
@@ -98,20 +125,38 @@ std::pair<int, int> searchForQuery(const std::string& videoPath, std::unordered_
 
 	vid.release();
 
-	/*std::cout << "TESTING" << std::endl;
-    std::cout << "Average Color for Frame 0: " << std::fixed << std::setprecision(6) << averageColors[0].transpose() << std::endl;
-    std::cout << "Average Color for Frame 0: " << averageColors[0].transpose() << std::endl;
-    std::cout << "Average Color for Frame 1: " << averageColors[1].transpose() << std::endl;
-    std::cout << "Average Color for Frame 2: " << averageColors[2].transpose() << std::endl;
-    std::cout << "Average Color for Frame 3: " << averageColors[3].transpose() << std::endl;
+	//std::cout << "TESTING" << std::endl;
+    // std::cout << "Average Color for Frame 0: " << std::fixed << std::setprecision(6) << averageColors[0].transpose() << std::endl;
+    // std::cout << "Average Color for Frame 0: " << averageColors[0].transpose() << std::endl;
+    // std::cout << "Average Color for Frame 1: " << averageColors[1].transpose() << std::endl;
+    // std::cout << "Average Color for Frame 2: " << averageColors[2].transpose() << std::endl;
+    // std::cout << "Average Color for Frame 3: " << averageColors[3].transpose() << std::endl;
 
-    std::cout << myDict["video2.mp4"][8340] << std::endl;
-    std::cout << myDict["video2.mp4"][8341] << std::endl;
-    std::cout << myDict["video2.mp4"][8342] << std::endl;
-    std::cout << myDict["video2.mp4"][8343] << std::endl;*/
+    // std::cout << myDict["video14.mp4"][13140] << std::endl;
+    // std::cout << myDict["video14.mp4"][13141] << std::endl;
+    // std::cout << myDict["video14.mp4"][13142] << std::endl;
+    // std::cout << myDict["video14.mp4"][13143] << std::endl;
+
+    // std::cout << myDict["video17.mp4"][4078] << std::endl;
+    // std::cout << myDict["video17.mp4"][4079] << std::endl;14067
+    // std::cout << myDict["video17.mp4"][4080] << std::endl;
+    // std::cout << myDict["video17.mp4"][4081] << std::endl;
+
+    // std::cout << myDict["video11.mp4"][14067] << std::endl;
+    // std::cout << myDict["video11.mp4"][14068] << std::endl;
+    // std::cout << myDict["video11.mp4"][14069] << std::endl;
+    // std::cout << myDict["video11.mp4"][14070] << std::endl;
+
+    // std::cout << "next" << std::endl;
+
+    // std::cout << myDict["video20.mp4"][14068] << std::endl;
+    // std::cout << myDict["video20.mp4"][14069] << std::endl;
+    // std::cout << myDict["video20.mp4"][14070] << std::endl;
+    // std::cout << myDict["video20.mp4"][14071] << std::endl;
+
 
     // call comparison funct
-    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.02);
+    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.15);
     if(test.first.empty()){
         //std::cout << "                NOTHING FOUND                " << std::endl;
         return std::make_pair(-1, -1);
