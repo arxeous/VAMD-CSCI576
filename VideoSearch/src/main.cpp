@@ -236,15 +236,22 @@ int main(int argc, char* argv[])
 				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
 				video->seek_req = true;
 				video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));
+				video->seek_flags = AVSEEK_FLAG_BACKWARD;
 				video->getNextQuery = nextQuery = false;
+
+				SDL_Event eventHold;
+				while (SDL_PollEvent(&eventHold))
+				{
+					//
+				}
 			}
 			strncpy_s(video->filename, play_this.c_str(), sizeof(video->filename));
 			video->pictQMutex = SDL_CreateMutex();
 			video->pictQCond = SDL_CreateCond();
 			video->avSyncType = DEFAULT_AV_SYNC_TYPE;
-			video->videoStream = NULL;
 			global_video_state = video;
 
+			schedule_refresh(video, 40);
 			video->parseThreadId = SDL_CreateThread(decode_thread, "decode", video);
 			break;
 		default:
