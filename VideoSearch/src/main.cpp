@@ -233,6 +233,10 @@ int main(int argc, char* argv[])
 				final_frame_prediction = output.final_frame_prediction;
 				final_second_prediction = output.final_second_prediction;
 
+				std::cout << "Video prediction: " << final_video_prediction << std::endl;
+				std::cout << "Frame prediction: " << final_frame_prediction << std::endl; 
+				std::cout << "Second prediction: " << final_second_prediction << std::endl;
+
 				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;
 				video->seek_req = true;
 				video->seek_pos = (int64_t)(static_cast<int>(final_second_prediction * AV_TIME_BASE));

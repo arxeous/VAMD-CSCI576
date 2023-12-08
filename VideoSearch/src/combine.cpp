@@ -69,24 +69,25 @@ double error(std::string q_video, int src_video, int start_frame, double thresho
 
     // count how many non-zeros there are 
     int nonZeroPixels = cv::countNonZero(frameDifference);
-    double matchThreshold = 100;
+    double matchThreshold = 10000;
 
     ogVid.release();
     queryVid.release();
 
     if (nonZeroPixels < matchThreshold) {
         std::cout << "Frames at indices " << ogVidIndex-1 << " and " << queryVidIndex << " match!" << std::endl;
+        std::cout << "Total non-zeros are ..." << nonZeroPixels << std::endl;
+        return nonZeroPixels;
     }
     else {
         std::cout << "Frames at indices " << ogVidIndex-1 << " and " << queryVidIndex << " do not match." << std::endl;
+        std::cout << "Total non-zeros are ..." << nonZeroPixels << std::endl;
+        return nonZeroPixels;
     }
-
-    std::cout << "Total non-zeros are ..." << nonZeroPixels << std::endl;
-    return true;
 }
 
 Result audioFrame(std::string query_audio, std::unordered_map<std::size_t, int> original_fingerprints[]) {
-    int final_video_prediction = 0;
+    int final_video_prediction = -1;
     int final_frame_prediction = 0;
     double final_second_prediction = 0; 
  
@@ -105,7 +106,15 @@ Result colorFrame(std::string q_video, std::unordered_map<std::string, std::vect
     int final_video_prediction = output.first;
     int final_frame_prediction = output.second;
     double final_second_prediction = output.second / 30;
+
+    /*if (error(q_video, final_video_prediction, final_frame_prediction) < error(q_video, final_video_prediction, final_frame_prediction - 1) && error(q_video, final_video_prediction, final_frame_prediction) < error(q_video, final_video_prediction, final_frame_prediction + 1)) {
+        return { final_video_prediction, final_frame_prediction, final_second_prediction };
+    }
+    else if (error(q_video, final_video_prediction, final_frame_prediction - 1) < error(q_video, final_video_prediction, final_frame_prediction + 1)) {
+        return { final_video_prediction, final_frame_prediction-1, final_second_prediction };
+    }*/
     return { final_video_prediction, final_frame_prediction, final_second_prediction };
+
 }
 
 Result startFrame(
@@ -140,7 +149,7 @@ Result startFrame(
     seconds = output.final_second_prediction;
     frame = output.final_frame_prediction;
 
-    if (src_video != -1 && error(query_vid, src_video, frame+1) < errorThreshold) {
+    if (src_video != -1) {
         std::cout << "Frame detected with audio sync method" << std::endl;
         auto stop_clock = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
@@ -148,12 +157,13 @@ Result startFrame(
         return { src_video, frame, seconds };
     }
 
+    start_clock = std::chrono::high_resolution_clock::now();
     output = colorFrame(query_vid, myDict);
     src_video = output.final_video_prediction;
     seconds = output.final_second_prediction;
     frame = output.final_frame_prediction;
 
-    if (src_video != -1 &&  error(query_vid, src_video, frame) < errorThreshold) {
+    if (src_video != -1) {
         std::cout << "Frame detected with color method" << std::endl;
         auto stop_clock = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);

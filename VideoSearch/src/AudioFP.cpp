@@ -16,10 +16,10 @@ double dist_from_line(double x, double y, double a, double b, double c) {
 }
 void linear_model_ransac(int* data, int size, int max_iter, double thresh, double min_inlier_perc, LineEquation* this_eq) {
     /*
-    data EA set of observations.
+    data ï¿½EA set of observations.
     size - the size of the data
-    max_iter EThe maximum number of iterations allowed in the algorithm.
-    thresh EA threshold value to determine data points that are fit well by the model (inlier).
+    max_iter ï¿½EThe maximum number of iterations allowed in the algorithm.
+    thresh ï¿½EA threshold value to determine data points that are fit well by the model (inlier).
     */
 
     //Randomize the seed
@@ -44,7 +44,7 @@ void linear_model_ransac(int* data, int size, int max_iter, double thresh, doubl
     }
 
     //Minimum number of matches required to be valid
-    if (num_nonzero >= size/2) {
+    if (num_nonzero >= size*.75) {
         int min_inliers = static_cast<int>(floor(min_inlier_perc * num_nonzero));
 
         //Perform RANSAC
