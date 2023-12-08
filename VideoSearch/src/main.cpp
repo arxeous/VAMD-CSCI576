@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
 
 	// Get shot boundary list
-	std::string filename = "shot_boundaries_maps.txt";
+	/*std::string filename = "shot_boundaries_maps.txt";
 	std::ifstream file(filename);
 
 	std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap;
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 	}
 	else {
 		std::cout << "Unable to locate shot boundary file" << std::endl;
-	}
+	}*/
 
 	// Get color map
 	std::ifstream inFile("colorDatabase100x100.txt");
@@ -102,16 +102,16 @@ int main(int argc, char* argv[])
 	// Get frame prediction
 	std::string query_video = argv[1];
 	std::string query_audio = argv[2];
-	Result output = startFrame(query_video, query_audio, original_fingerprints, shotBoundariesMap, myDict);
+	Result output = startFrame(query_video, query_audio, original_fingerprints, myDict);
 	int final_video_prediction = output.final_video_prediction;
 	int final_frame_prediction = output.final_frame_prediction;
 	double final_second_prediction = output.final_second_prediction;
 
 	std::cout << "Video prediction: " << final_video_prediction << std::endl;
-	std::cout << "Frame prediction: " << final_frame_prediction << std::endl;
+	std::cout << "Frame prediction: " << final_frame_prediction << std::endl; 
 	std::cout << "Second prediction: " << final_second_prediction << std::endl;
 
-	/*
+	
 	SDL_Event event;
 	VideoState* video;
 	char newFile[1024];
@@ -228,7 +228,8 @@ int main(int argc, char* argv[])
 				std::filesystem::path pathObj(query_audio);
 				query_audio = pathObj.filename().string();
 
-				output = startFrame(query_video, query_audio, original_fingerprints);
+				output = startFrame(query_video, query_audio, original_fingerprints, myDict);
+				//output = startFrame(query_video, query_audio, original_fingerprints);
 				final_video_prediction = output.final_video_prediction;
 				final_frame_prediction = output.final_frame_prediction;
 				final_second_prediction = output.final_second_prediction;
@@ -268,6 +269,5 @@ int main(int argc, char* argv[])
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(screen);
 	SDL_Quit();
-	*/
 	return 0;
 }

@@ -14,11 +14,10 @@ typedef struct  {
 
 double error(std::string query_video, int src_video, int start_frame, double threshold = 0.5);
 Result audioFrame(std::string query_audio, std::unordered_map<std::size_t, int> original_fingerprints[]);
-Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap);
+//Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap);
 Result colorFrame(std::string query_vid, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict);
 Result startFrame(std::string query_vid, std::string query_audio, 
     std::unordered_map<std::size_t, int> original_fingerprints[],
-    std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap,
     std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict
 );
 void test();

@@ -75,10 +75,10 @@ double error(std::string q_video, int src_video, int start_frame, double thresho
     queryVid.release();
 
     if (nonZeroPixels < matchThreshold) {
-        std::cout << "Frames at indices " << ogVidIndex << " and " << queryVidIndex << " match!" << std::endl;
+        std::cout << "Frames at indices " << ogVidIndex-1 << " and " << queryVidIndex << " match!" << std::endl;
     }
     else {
-        std::cout << "Frames at indices " << ogVidIndex << " and " << queryVidIndex << " do not match." << std::endl;
+        std::cout << "Frames at indices " << ogVidIndex-1 << " and " << queryVidIndex << " do not match." << std::endl;
     }
 
     std::cout << "Total non-zeros are ..." << nonZeroPixels << std::endl;
@@ -95,9 +95,9 @@ Result audioFrame(std::string query_audio, std::unordered_map<std::size_t, int> 
     return { final_video_prediction, final_frame_prediction, final_second_prediction};
 }
 
-Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
-    return { -1, -1, -1 };
-}
+//Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
+//    return { -1, -1, -1 };
+//}
 
 Result colorFrame(std::string q_video, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict) {
     std::string query_video = "./query_mp4/" + q_video;
@@ -112,7 +112,6 @@ Result startFrame(
     std::string query_vid, 
     std::string query_audio, 
     std::unordered_map<std::size_t, int> original_fingerprints[],
-    std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap,
     std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict
 ) {
     
@@ -123,7 +122,7 @@ Result startFrame(
     double seconds;
     Result output;
 
-    output = shotFrame(query_vid, shotBoundariesMap);
+    /*output = shotFrame(query_vid, shotBoundariesMap);
     src_video = output.final_video_prediction;
     seconds = output.final_second_prediction;
     frame = output.final_frame_prediction;
@@ -134,35 +133,35 @@ Result startFrame(
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
         printf("\nSearch time in millisecs: %d\n", duration.count());
         return { src_video, frame, seconds };
+    }*/
+
+    output = audioFrame(query_audio, original_fingerprints);
+    src_video = output.final_video_prediction;
+    seconds = output.final_second_prediction;
+    frame = output.final_frame_prediction;
+
+    if (src_video != -1 && error(query_vid, src_video, frame+1) < errorThreshold) {
+        std::cout << "Frame detected with audio sync method" << std::endl;
+        auto stop_clock = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
+        printf("\nSearch time in ms: %d\n", duration.count());
+        return { src_video, frame, seconds };
     }
 
-    //output = audioFrame(query_audio, original_fingerprints);
-    //src_video = output.final_video_prediction;
-    //seconds = output.final_second_prediction;
-    //frame = output.final_frame_prediction;
+    output = colorFrame(query_vid, myDict);
+    src_video = output.final_video_prediction;
+    seconds = output.final_second_prediction;
+    frame = output.final_frame_prediction;
 
-    //if (src_video != -1 && error(query_vid, src_video, frame) < errorThreshold) {
-    //    std::cout << "Frame detected with audio sync method" << std::endl;
-    //    auto stop_clock = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
-    //    printf("\nSearch time in ms: %d\n", duration.count());
-    //    return { src_video, frame, seconds };
-    //}
-
-    //output = colorFrame(query_vid, myDict);
-    //src_video = output.final_video_prediction;
-    //seconds = output.final_second_prediction;
-    //frame = output.final_frame_prediction;
-
-    //if (src_video != -1 &&  error(query_vid, src_video, frame) < errorThreshold) {
-    //    std::cout << "Frame detected with color method" << std::endl;
-    //    auto stop_clock = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
-    //    printf("\nSearch time in millisecs: %d\n", duration.count());
-    //    return { src_video, frame, seconds };
-    //}
+    if (src_video != -1 &&  error(query_vid, src_video, frame) < errorThreshold) {
+        std::cout << "Frame detected with color method" << std::endl;
+        auto stop_clock = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
+        printf("\nSearch time in millisecs: %d\n", duration.count());
+        return { src_video, frame-1, seconds };
+    }
    
 
     //// Return a default value if no correct frame found
-    //return { -1, -1, -1 };
+    return { -1, -1, -1 };
 }

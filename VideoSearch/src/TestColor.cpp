@@ -111,7 +111,7 @@ std::pair<int, int> searchForQuery(const std::string& videoPath, std::unordered_
     std::cout << myDict["video2.mp4"][8343] << std::endl;*/
 
     // call comparison funct
-    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.5);
+    std::pair<std::string, int> test = findSubarrayThreshold(myDict, averageColors, 0.02);
     if(test.first.empty()){
         //std::cout << "                NOTHING FOUND                " << std::endl;
         return std::make_pair(-1, -1);
