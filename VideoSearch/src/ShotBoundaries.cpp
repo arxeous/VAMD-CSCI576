@@ -93,6 +93,8 @@ std::vector<int> calculateDifferences(const std::vector<int>& arr) {
 std::vector<int> findArrayIndex(const std::vector<int>& long_arr, const std::vector<int>& short_arr) {
     std::vector<int> indices;
 
+    if (long_arr.size() < short_arr.size()) return indices;
+
     for (size_t i = 0; i <= long_arr.size() - short_arr.size(); ++i) {
         bool match = true;
 
@@ -114,27 +116,10 @@ std::vector<int> findArrayIndex(const std::vector<int>& long_arr, const std::vec
 
 
 // final function
-int findFrame(const std::string& videoPath, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
+std::map<std::string, std::vector<int>> matches(const std::string& videoPath, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
     // Find shot boundaries and differences for the query video
-    std::vector<int> queryBoundaries = shotBoundaries(videoPath);
-    std::vector<int> queryDifferences = calculateDifferences(queryBoundaries);
-
-    
-
-    std::map<std::string, std::vector<int>> possibleMatches; // Modified to store multiple indices
-
-    for (const auto& entry : shotBoundariesMap) {
-        std::vector<int> indices = findArrayIndex(entry.second.second, queryDifferences);
-        if (!indices.empty()) {
-            for (int index : indices) {
-                possibleMatches[entry.first].push_back(entry.second.first[index]);
-            }
-        }
-    }
-
-    /*
-    // Display shot boundaries map
-    std::cout << "Shot Boundaries map" << std::endl;
+      // Display shot boundaries map
+    /*std::cout << "Shot Boundaries map" << std::endl;
     for (const auto& entry : shotBoundariesMap) {
         std::cout << "Video: " << entry.first << std::endl;
         std::cout << "Shot Boundaries: ";
@@ -146,7 +131,29 @@ int findFrame(const std::string& videoPath, std::map<std::string, std::pair<std:
             std::cout << diff << " ";
         }
         std::cout << std::endl;
+    }*/
+    std::vector<int> queryBoundaries = shotBoundaries(videoPath);
+    std::vector<int> queryDifferences = calculateDifferences(queryBoundaries);
+    for (int diff : queryDifferences) {
+        std::cout << "Diff: " << diff << std::endl;
     }
+    std::map<std::string, std::vector<int>> possibleMatches; // Modified to store multiple indices
+
+    if (queryDifferences.size() < 1) return possibleMatches;
+
+    for (const auto& entry : shotBoundariesMap) {
+        /*for (int e : entry.second.second) {
+           std::cout << "entry from " << entry.first << ": " << e << std::endl;
+        }*/
+        
+        std::vector<int> indices = findArrayIndex(entry.second.second, queryDifferences);
+        if (!indices.empty()) {
+            for (int index : indices) {
+                possibleMatches[entry.first].push_back(entry.second.first[index] - queryBoundaries[0]);
+            }
+        }
+    }
+
 
     // Display possible source videos and their starting frames
     for (const auto& match : possibleMatches) {
@@ -155,7 +162,7 @@ int findFrame(const std::string& videoPath, std::map<std::string, std::pair<std:
             std::cout << startingFrame << " ";
         }
         std::cout << std::endl;
-    }*/
+    }
 
-    return 1;
+    return possibleMatches;
 }

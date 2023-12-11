@@ -96,9 +96,38 @@ Result audioFrame(std::string query_audio, std::unordered_map<std::size_t, int> 
     return { final_video_prediction, final_frame_prediction, final_second_prediction};
 }
 
-//Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
-//    return { -1, -1, -1 };
-//}
+Result shotFrame(std::string query_vid, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap) {
+    std::map<std::string, std::vector<int>> match_output = matches("./query_mp4/" + query_vid, shotBoundariesMap);
+    if (match_output.empty())
+        return { -1, -1, -1 };
+
+    double leastError = std::numeric_limits<double>::infinity();
+    int bestVid = -1;
+    int bestFrame = -1;
+
+    for (const auto& match : match_output) {
+        // Extracting the video ID (assuming the 6th character)
+        size_t startPos = match.first.find_first_of("0123456789");
+        std::string numberStr = match.first.substr(startPos);
+        std::istringstream iss(numberStr);
+        int vid;
+        iss >> vid;
+
+        for (int index : match.second) {
+            double currentError = error(query_vid, vid, index);
+
+            if (currentError < leastError) {
+                leastError = currentError;
+                bestVid = vid;
+                bestFrame = index;
+            }
+        }
+    }
+
+
+    double final_second_prediction = bestFrame / 30;
+    return { bestVid, bestFrame, final_second_prediction };
+}
 
 Result colorFrame(std::string q_video, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict) {
     std::string query_video = "./query_mp4/" + q_video;
@@ -121,30 +150,18 @@ Result startFrame(
     std::string query_vid, 
     std::string query_audio, 
     std::unordered_map<std::size_t, int> original_fingerprints[],
-    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict
+    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict,
+    std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap
 ) {
     
     auto start_clock = std::chrono::high_resolution_clock::now();
     int src_video;
     int frame;
-    int errorThreshold = 10000;
+    int errorThreshold = 100;
     double seconds;
     Result output;
 
-    /*output = shotFrame(query_vid, shotBoundariesMap);
-    src_video = output.final_video_prediction;
-    seconds = output.final_second_prediction;
-    frame = output.final_frame_prediction;
-
-    if (src_video != -1 && error(query_vid, src_video, frame) < errorThreshold) {
-        std::cout << "Frame detected with shot boundaries method" << std::endl;
-        auto stop_clock = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
-        printf("\nSearch time in millisecs: %d\n", duration.count());
-        return { src_video, frame, seconds };
-    }*/
-
-    output = audioFrame(query_audio, original_fingerprints);
+    /*output = audioFrame(query_audio, original_fingerprints);
     src_video = output.final_video_prediction;
     seconds = output.final_second_prediction;
     frame = output.final_frame_prediction;
@@ -155,6 +172,19 @@ Result startFrame(
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
         printf("\nSearch time in ms: %d\n", duration.count());
         return { src_video, frame, seconds };
+    }*/
+
+    output = shotFrame(query_vid, shotBoundariesMap);
+    src_video = output.final_video_prediction;
+    seconds = output.final_second_prediction;
+    frame = output.final_frame_prediction;
+
+    if (src_video != -1) {
+        std::cout << "Frame detected with shot boundaries method" << std::endl;
+        auto stop_clock = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_clock - start_clock);
+        printf("\nSearch time in millisecs: %d\n", duration.count());
+        return { src_video, frame - 1, seconds };
     }
 
     start_clock = std::chrono::high_resolution_clock::now();

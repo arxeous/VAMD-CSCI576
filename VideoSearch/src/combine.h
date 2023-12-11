@@ -18,6 +18,7 @@ Result audioFrame(std::string query_audio, std::unordered_map<std::size_t, int> 
 Result colorFrame(std::string query_vid, std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict);
 Result startFrame(std::string query_vid, std::string query_audio, 
     std::unordered_map<std::size_t, int> original_fingerprints[],
-    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict
+    std::unordered_map<std::string, std::vector<Eigen::Vector3f>> myDict,
+    std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap
 );
 void test();

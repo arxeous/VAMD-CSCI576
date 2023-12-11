@@ -28,18 +28,22 @@ int main(int argc, char* argv[])
 
 
 	// Get shot boundary list
-	/*std::string filename = "shot_boundaries_maps.txt";
+	std::string filename = "shot_boundaries.txt";
 	std::ifstream file(filename);
 
 	std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap;
 
 	if (file.is_open()) {
-		// Read shot boundaries maps from the file
 		std::cout << "Decoding shot boundary file..." << std::endl;
 		std::string line;
 		while (std::getline(file, line)) {
-			std::string videoName = line.substr(0, line.find(":"));
+			// Extract video ID as a string
+			std::string videoID = line.substr(0, line.find(":"));
 			line.erase(0, line.find(":") + 2);
+
+			// Convert video ID to integer for use if needed
+			int vid = std::stoi(videoID);
+
 			std::istringstream iss(line);
 			std::vector<int> boundaries, differences;
 			int num;
@@ -56,13 +60,51 @@ int main(int argc, char* argv[])
 					differences.push_back(num);
 				}
 			}
-			shotBoundariesMap[videoName] = std::make_pair(boundaries, differences);
+			shotBoundariesMap[videoID] = std::make_pair(boundaries, differences);
 		}
 		file.close();
 	}
 	else {
 		std::cout << "Unable to locate shot boundary file" << std::endl;
-	}*/
+	}
+
+	std::string filename2 = "shot_differences.txt";
+	std::ifstream file2(filename2);
+
+	if (file2.is_open()) {
+		std::cout << "Decoding shot difference file..." << std::endl;
+		std::string line;
+		while (std::getline(file2, line)) {
+			// Extract video ID as a string
+			std::string videoID = line.substr(0, line.find(":"));
+			line.erase(0, line.find(":") + 2);
+
+			// Convert video ID to integer for use if needed
+			int vid = std::stoi(videoID);
+
+			std::istringstream iss(line);
+			std::vector<int> boundaries, differences;
+			int num;
+			bool readingBoundaries = true;
+			while (iss >> num) {
+				if (num == '|') {
+					readingBoundaries = false;
+					continue;
+				}
+				if (readingBoundaries) {
+					boundaries.push_back(num);
+				}
+				else {
+					differences.push_back(num);
+				}
+			}
+			shotBoundariesMap[videoID].second = boundaries;
+		}
+		file2.close();
+	}
+	else {
+		std::cout << "Unable to locate shot boundary file" << std::endl;
+	}
 
 	// Get color map
 	std::ifstream inFile("colorDatabase100x100.txt");
@@ -102,7 +144,7 @@ int main(int argc, char* argv[])
 	// Get frame prediction
 	std::string query_video = argv[1];
 	std::string query_audio = argv[2];
-	Result output = startFrame(query_video, query_audio, original_fingerprints, myDict);
+	Result output = startFrame(query_video, query_audio, original_fingerprints, myDict, shotBoundariesMap);
 	int final_video_prediction = output.final_video_prediction;
 	int final_frame_prediction = output.final_frame_prediction;
 	double final_second_prediction = output.final_second_prediction;
@@ -227,14 +269,14 @@ int main(int argc, char* argv[])
 				query_audio = pathObj.filename().replace_extension(".wav").string();
 				query_video = pathObj.filename().replace_extension(".mp4").string();
 
-				output = startFrame(query_video, query_audio, original_fingerprints, myDict);
+				output = startFrame(query_video, query_audio, original_fingerprints, myDict, shotBoundariesMap);
 				//output = startFrame(query_video, query_audio, original_fingerprints);
 				final_video_prediction = output.final_video_prediction;
 				final_frame_prediction = output.final_frame_prediction;
 				final_second_prediction = output.final_second_prediction;
 
 				std::cout << "Video prediction: " << final_video_prediction << std::endl;
-				std::cout << "Frame prediction: " << final_frame_prediction << std::endl; 
+				std::cout << "Frame prediction: " << final_frame_prediction << std::endl;
 				std::cout << "Second prediction: " << final_second_prediction << std::endl;
 
 				play_this = mp4_dir + mp4_a + std::to_string(final_video_prediction) + mp4_b;

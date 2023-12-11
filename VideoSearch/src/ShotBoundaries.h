@@ -17,4 +17,4 @@ std::vector<int> shotBoundaries(const std::string& input_vid, double threshold =
 std::vector<int> findArrayIndex(const std::vector<int>& long_arr, const std::vector<int>& short_arr);
 std::map<std::string, std::vector<int>> makeShotBoundariesMap();
 std::vector<int> calculateDifferences(const std::vector<int>& arr);
-int findFrame(const std::string& videoPath, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap);
+std::map<std::string, std::vector<int>> matches(const std::string& videoPath, std::map<std::string, std::pair<std::vector<int>, std::vector<int>>> shotBoundariesMap);
